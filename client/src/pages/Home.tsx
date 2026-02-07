@@ -8,21 +8,17 @@ import {
   TrendingDown,
   Package,
   Clock,
+  ShoppingCart,
 } from "lucide-react";
 import {
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  LineChart,
-  Line,
 } from "recharts";
 
 interface DataItem {
@@ -84,46 +80,34 @@ export default function Home() {
     }
   };
 
-  // Preparar dados para gráficos
-  const statusChartData = data
-    ? [
-        {
-          name: "OK",
-          value: data.status_counts["🟢 OK"] || 0,
-          fill: "#10B981",
-        },
-        {
-          name: "Atenção",
-          value: data.status_counts["🟡 ATENÇÃO"] || 0,
-          fill: "#F59E0B",
-        },
-        {
-          name: "Crítico",
-          value: data.status_counts["🔴 CRÍTICO"] || 0,
-          fill: "#EF4444",
-        },
-      ]
-    : [];
+  // Encontrar item que precisa comprar primeiro (menor duração)
+  const itemComprarPrimeiro = data
+    ? data.data_preview.reduce((prev, current) =>
+        prev["DURAÇÃO EM DIAS"] < current["DURAÇÃO EM DIAS"] ? prev : current
+      )
+    : null;
 
-  // Dados de consumo vs estoque
+  // Encontrar item com menor estoque
+  const itemMenorEstoque = data
+    ? data.data_preview.reduce((prev, current) =>
+        prev["SALDO EM ESTOQUE"] < current["SALDO EM ESTOQUE"] ? prev : current
+      )
+    : null;
+
+  // Encontrar item com maior estoque
+  const itemMaiorEstoque = data
+    ? data.data_preview.reduce((prev, current) =>
+        prev["SALDO EM ESTOQUE"] > current["SALDO EM ESTOQUE"] ? prev : current
+      )
+    : null;
+
+  // Preparar dados para gráfico com TODOS os itens
   const consumoData = data
-    ? data.data_preview
-        .slice(0, 8)
-        .map((item) => ({
-          nome: item["DESCRIÇÃO DO ITEM"].substring(0, 15),
-          estoque: item["SALDO EM ESTOQUE"],
-          consumo: item["CONSUMO MEDIO MENSAL"],
-        }))
-    : [];
-
-  // Dados de duração
-  const duracaoData = data
-    ? data.data_preview
-        .slice(0, 8)
-        .map((item) => ({
-          nome: item["DESCRIÇÃO DO ITEM"].substring(0, 15),
-          dias: item["DURAÇÃO EM DIAS"],
-        }))
+    ? data.data_preview.map((item) => ({
+        nome: item["DESCRIÇÃO DO ITEM"].substring(0, 20),
+        estoque: item["SALDO EM ESTOQUE"],
+        consumo: item["CONSUMO MEDIO MENSAL"],
+      }))
     : [];
 
   if (loading) {
@@ -151,7 +135,7 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* KPI Cards */}
+        {/* KPI Cards - Simplificado */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Total Items */}
           <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors">
@@ -168,60 +152,89 @@ export default function Home() {
             </div>
           </Card>
 
-          {/* Total Stock */}
-          <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors">
+          {/* Item que precisa comprar primeiro */}
+          <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
+            onClick={() => {
+              if (itemComprarPrimeiro) {
+                handleCategoryFilter("Todos");
+                const element = document.getElementById(`item-${itemComprarPrimeiro.CODIGO}`);
+                element?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }
+            }}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-muted-foreground text-sm font-medium">
-                  Estoque Total
+                  Comprar Primeiro
                 </p>
-                <p className="text-3xl font-bold text-accent mt-2">
-                  {data?.estoque_total.toLocaleString("pt-BR", {
-                    maximumFractionDigits: 0,
-                  })}
+                <p className="text-sm font-semibold text-accent mt-2 line-clamp-2">
+                  {itemComprarPrimeiro?.["DESCRIÇÃO DO ITEM"]}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {itemComprarPrimeiro?.["DURAÇÃO EM DIAS"]} dias
+                </p>
+              </div>
+              <ShoppingCart className="w-8 h-8 text-accent/60" />
+            </div>
+          </Card>
+
+          {/* Item com menor estoque */}
+          <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
+            onClick={() => {
+              if (itemMenorEstoque) {
+                handleCategoryFilter("Todos");
+                const element = document.getElementById(`item-${itemMenorEstoque.CODIGO}`);
+                element?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }
+            }}>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-muted-foreground text-sm font-medium">
+                  Menor Estoque
+                </p>
+                <p className="text-sm font-semibold text-accent mt-2 line-clamp-2">
+                  {itemMenorEstoque?.["DESCRIÇÃO DO ITEM"]}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {itemMenorEstoque?.["SALDO EM ESTOQUE"]} un
                 </p>
               </div>
               <TrendingDown className="w-8 h-8 text-accent/60" />
             </div>
           </Card>
 
-          {/* Monthly Consumption */}
-          <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors">
+          {/* Item com maior estoque */}
+          <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
+            onClick={() => {
+              if (itemMaiorEstoque) {
+                handleCategoryFilter("Todos");
+                const element = document.getElementById(`item-${itemMaiorEstoque.CODIGO}`);
+                element?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }
+            }}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-muted-foreground text-sm font-medium">
-                  Consumo Mensal
+                  Maior Estoque
                 </p>
-                <p className="text-3xl font-bold text-accent mt-2">
-                  {data?.consumo_total.toLocaleString("pt-BR", {
-                    maximumFractionDigits: 0,
-                  })}
+                <p className="text-sm font-semibold text-accent mt-2 line-clamp-2">
+                  {itemMaiorEstoque?.["DESCRIÇÃO DO ITEM"]}
                 </p>
-              </div>
-              <AlertCircle className="w-8 h-8 text-accent/60" />
-            </div>
-          </Card>
-
-          {/* Average Duration */}
-          <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Duração Média
-                </p>
-                <p className="text-3xl font-bold text-accent mt-2">
-                  {data?.media_duracao.toFixed(1)} dias
+                <p className="text-xs text-muted-foreground mt-1">
+                  {itemMaiorEstoque?.["SALDO EM ESTOQUE"]} un
                 </p>
               </div>
-              <Clock className="w-8 h-8 text-accent/60" />
+              <Package className="w-8 h-8 text-accent/60" />
             </div>
           </Card>
         </div>
 
-        {/* Status Summary */}
+        {/* Status Cards - Interativos */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
           {/* Critical Items */}
-          <Card className="bg-card border-border p-6 border-l-4 border-l-red-500">
+          <Card
+            className="bg-card border-border p-6 border-l-4 border-l-red-500 cursor-pointer hover:bg-card/80 transition-colors"
+            onClick={() => handleCategoryFilter("Críticos")}
+          >
             <div className="flex items-start gap-3">
               <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
               <div className="flex-1">
@@ -243,12 +256,18 @@ export default function Home() {
                     ))}
                   </ul>
                 )}
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  Clique para filtrar
+                </p>
               </div>
             </div>
           </Card>
 
           {/* Attention Items */}
-          <Card className="bg-card border-border p-6 border-l-4 border-l-amber-500">
+          <Card
+            className="bg-card border-border p-6 border-l-4 border-l-amber-500 cursor-pointer hover:bg-card/80 transition-colors"
+            onClick={() => handleCategoryFilter("Atenção")}
+          >
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-1" />
               <div className="flex-1">
@@ -275,12 +294,18 @@ export default function Home() {
                     )}
                   </ul>
                 )}
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  Clique para filtrar
+                </p>
               </div>
             </div>
           </Card>
 
           {/* OK Items */}
-          <Card className="bg-card border-border p-6 border-l-4 border-l-green-500">
+          <Card
+            className="bg-card border-border p-6 border-l-4 border-l-green-500 cursor-pointer hover:bg-card/80 transition-colors"
+            onClick={() => handleCategoryFilter("OK")}
+          >
             <div className="flex items-start gap-3">
               <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
               <div className="flex-1">
@@ -298,49 +323,34 @@ export default function Home() {
                   ).toFixed(0)}
                   % do inventário
                 </p>
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  Clique para filtrar
+                </p>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Status Distribution */}
-          <Card className="bg-card border-border p-6">
-            <h2 className="text-lg font-semibold mb-4">Distribuição de Status</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statusChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {statusChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-
-          {/* Consumption vs Stock */}
-          <Card className="bg-card border-border p-6">
-            <h2 className="text-lg font-semibold mb-4">
-              Consumo vs Estoque (Top 8)
-            </h2>
-            <ResponsiveContainer width="100%" height={300}>
+        {/* Consumption Chart - All Items */}
+        <Card className="bg-card border-border p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4">
+            Consumo vs Estoque (Todos os Itens)
+          </h2>
+          <div className="overflow-x-auto">
+            <ResponsiveContainer width="100%" height={400} minWidth={1200}>
               <BarChart data={consumoData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="rgba(255,255,255,0.1)"
                 />
-                <XAxis dataKey="nome" stroke="currentColor" fontSize={12} />
+                <XAxis
+                  dataKey="nome"
+                  stroke="currentColor"
+                  fontSize={12}
+                  angle={-45}
+                  textAnchor="end"
+                  height={100}
+                />
                 <YAxis stroke="currentColor" fontSize={12} />
                 <Tooltip
                   contentStyle={{
@@ -353,36 +363,7 @@ export default function Home() {
                 <Bar dataKey="consumo" fill="#F59E0B" name="Consumo" />
               </BarChart>
             </ResponsiveContainer>
-          </Card>
-        </div>
-
-        {/* Duration Chart */}
-        <Card className="bg-card border-border p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4">Duração do Estoque (Top 8)</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={duracaoData}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="rgba(255,255,255,0.1)"
-              />
-              <XAxis dataKey="nome" stroke="currentColor" fontSize={12} />
-              <YAxis stroke="currentColor" fontSize={12} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "rgba(15, 23, 42, 0.9)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="dias"
-                stroke="#10B981"
-                strokeWidth={2}
-                dot={{ fill: "#10B981", r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          </div>
         </Card>
 
         {/* Data Table with Filters */}
@@ -444,6 +425,9 @@ export default function Home() {
                         <th className="text-right py-3 px-4 font-semibold text-muted-foreground">
                           Duração
                         </th>
+                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                          Data Solicitação
+                        </th>
                         <th className="text-center py-3 px-4 font-semibold text-muted-foreground">
                           Status
                         </th>
@@ -453,6 +437,7 @@ export default function Home() {
                       {filteredData.map((item, idx) => (
                         <tr
                           key={idx}
+                          id={`item-${item.CODIGO}`}
                           className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
                         >
                           <td className="py-3 px-4 font-mono text-xs">
@@ -487,6 +472,9 @@ export default function Home() {
                             >
                               {item["DURAÇÃO EM DIAS"]} dias
                             </span>
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            {item["DATA LIMITE DE SOLICITAÇÃO "]}
                           </td>
                           <td className="py-3 px-4 text-center">
                             <span className="text-lg">{item.Coluna1}</span>
