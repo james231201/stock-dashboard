@@ -337,7 +337,7 @@ export default function Home() {
             Consumo vs Estoque (Todos os Itens)
           </h2>
           <div className="overflow-x-auto">
-            <ResponsiveContainer width="100%" height={400} minWidth={1200}>
+            <ResponsiveContainer width="100%" height={600} minWidth={1200}>
               <BarChart data={consumoData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
