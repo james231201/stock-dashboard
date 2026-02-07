@@ -94,8 +94,9 @@ export async function saveDashboardData(data: any) {
     const fs = await import('fs').then(m => m.promises);
     const path = await import('path');
     const dataPath = path.join(process.cwd(), 'client', 'public', 'data.json');
-    await fs.writeFile(dataPath, JSON.stringify(data, null, 2));
-    console.log('[Dashboard] Dados salvos em data.json');
+    const dataToSave = data && typeof data === 'object' ? data : {};
+    await fs.writeFile(dataPath, JSON.stringify(dataToSave, null, 2));
+    console.log('[Dashboard] Dados salvos em data.json com sucesso!');
   } catch (error) {
     console.warn('[Dashboard] Aviso ao salvar data.json:', error);
   }

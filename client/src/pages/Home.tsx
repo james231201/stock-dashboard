@@ -173,17 +173,19 @@ export default function Home() {
 
       // Salvar no servidor (data.json)
       try {
-        await fetch("/api/trpc/dashboard.saveData", {
+        const response = await fetch("/api/trpc/dashboard.saveData", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            0: {
-              json: newData,
-            },
+            json: newData,
           }),
+          credentials: "include",
         });
+        if (response.ok) {
+          console.log("✅ Dados salvos no servidor com sucesso!");
+        }
       } catch (error) {
         console.warn("Aviso: Dados não foram salvos no servidor", error);
       }
