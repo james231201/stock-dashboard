@@ -1,0 +1,7 @@
+CREATE TABLE `dashboard_data` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`data` text NOT NULL,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `dashboard_data_id` PRIMARY KEY(`id`)
+);

@@ -41,22 +41,41 @@ export default function Home() {
   const [filteredData, setFilteredData] = useState<DataItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
+    loadDefaultData();
+  }, []);
+
+  const loadDefaultData = () => {
+    // Tentar carregar dados do LocalStorage primeiro
+    const savedData = localStorage.getItem("dashboardData");
+    if (savedData) {
+      try {
+        const json = JSON.parse(savedData);
+        setData(json);
+        setFilteredData(json.data_preview);
+        setIsLoading(false);
+        return;
+      } catch (error) {
+        console.error("Erro ao carregar dados salvos", error);
+      }
+    }
+
+    // Se não houver dados salvos, carregar do arquivo padrão
     fetch("/data.json")
       .then((res) => res.json())
       .then((json: DashboardData) => {
         setData(json);
         setFilteredData(json.data_preview);
-        setLoading(false);
+        setIsLoading(false);
       })
       .catch(() => {
-        setLoading(false);
+        setIsLoading(false);
         toast.error("Erro ao carregar dados iniciais");
       });
-  }, []);
+  };
 
   const determinarStatus = (duracao: number): string => {
     if (duracao <= 0) return "🔴 CRÍTICO";
@@ -149,11 +168,14 @@ export default function Home() {
         data_preview: processedData,
       };
 
+      // Salvar no LocalStorage
+      localStorage.setItem("dashboardData", JSON.stringify(newData));
+
       setData(newData);
       setFilteredData(processedData);
       setSelectedCategory("Todos");
       setSearchTerm("");
-      toast.success(`✅ Dados carregados! ${totalItens} itens processados.`);
+      toast.success(`✅ Dados carregados e salvos! ${totalItens} itens processados.`);
     } catch (error) {
       console.error("Erro ao processar Excel:", error);
       toast.error("❌ Erro ao processar arquivo Excel. Verifique o formato.");
@@ -234,7 +256,7 @@ export default function Home() {
       )
     : null;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-foreground text-lg">Carregando dashboard...</div>
