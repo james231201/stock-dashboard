@@ -2,24 +2,23 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  BarChart,
+  Bar,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import {
   AlertCircle,
   CheckCircle2,
   AlertTriangle,
   TrendingDown,
   Package,
-  Clock,
   ShoppingCart,
 } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 
 interface DataItem {
   CODIGO: number;
@@ -103,41 +102,48 @@ export default function Home() {
     setFilteredData(filtered);
   };
 
-  // Encontrar item que precisa comprar primeiro (menor duração)
   const itemComprarPrimeiro = data
     ? data.data_preview.reduce((prev, current) =>
         prev["DURAÇÃO EM DIAS"] < current["DURAÇÃO EM DIAS"] ? prev : current
       )
     : null;
 
-  // Encontrar item com menor estoque
   const itemMenorEstoque = data
     ? data.data_preview.reduce((prev, current) =>
         prev["SALDO EM ESTOQUE"] < current["SALDO EM ESTOQUE"] ? prev : current
       )
     : null;
 
-  // Encontrar item com maior estoque
   const itemMaiorEstoque = data
     ? data.data_preview.reduce((prev, current) =>
         prev["SALDO EM ESTOQUE"] > current["SALDO EM ESTOQUE"] ? prev : current
       )
     : null;
 
-  // Preparar dados para gráfico com TODOS os itens
   const consumoData = data
-    ? data.data_preview.map((item) => ({
-        nome: item["DESCRIÇÃO DO ITEM"].substring(0, 20),
-        estoque: item["SALDO EM ESTOQUE"],
-        consumo: item["CONSUMO MEDIO MENSAL"],
-      }))
+    ? data.data_preview.map((item) => {
+        const estoque = item["SALDO EM ESTOQUE"];
+        const consumo = item["CONSUMO MEDIO MENSAL"];
+        
+        const estoqueRepresentativo = Math.sqrt(estoque) * 15;
+        const consumoRepresentativo = Math.sqrt(consumo) * 15;
+        
+        return {
+          nome: item["DESCRIÇÃO DO ITEM"].substring(0, 15),
+          estoque: estoqueRepresentativo,
+          consumo: consumoRepresentativo,
+          estoqueReal: estoque,
+          consumoReal: consumo,
+        };
+      })
     : [];
 
-  // Função para formatar data em pt-BR
   const formatarDataPtBR = (dataString: string) => {
     const [ano, mes, dia] = dataString.split("-");
     return `${dia}/${mes}/${ano}`;
   };
+
+
 
   if (loading) {
     return (
@@ -149,7 +155,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center gap-3 mb-2">
@@ -162,12 +167,12 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* KPI Cards - Simplificado */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* Total Items */}
-          <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors">
+          <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
+            onClick={() => {
+              handleCategoryFilter("Todos");
+            }}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-muted-foreground text-sm font-medium">
@@ -181,13 +186,15 @@ export default function Home() {
             </div>
           </Card>
 
-          {/* Item que precisa comprar primeiro */}
           <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
             onClick={() => {
               if (itemComprarPrimeiro) {
                 handleCategoryFilter("Todos");
-                const element = document.getElementById(`item-${itemComprarPrimeiro.CODIGO}`);
-                element?.scrollIntoView({ behavior: "smooth", block: "center" });
+                setTimeout(() => {
+                  const element = document.getElementById(`item-${itemComprarPrimeiro.CODIGO}`);
+                  element?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  element?.classList.add("bg-accent/20");
+                }, 100);
               }
             }}>
             <div className="flex items-start justify-between">
@@ -206,13 +213,15 @@ export default function Home() {
             </div>
           </Card>
 
-          {/* Item com menor estoque */}
           <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
             onClick={() => {
               if (itemMenorEstoque) {
                 handleCategoryFilter("Todos");
-                const element = document.getElementById(`item-${itemMenorEstoque.CODIGO}`);
-                element?.scrollIntoView({ behavior: "smooth", block: "center" });
+                setTimeout(() => {
+                  const element = document.getElementById(`item-${itemMenorEstoque.CODIGO}`);
+                  element?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  element?.classList.add("bg-accent/20");
+                }, 100);
               }
             }}>
             <div className="flex items-start justify-between">
@@ -231,13 +240,15 @@ export default function Home() {
             </div>
           </Card>
 
-          {/* Item com maior estoque */}
           <Card className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
             onClick={() => {
               if (itemMaiorEstoque) {
                 handleCategoryFilter("Todos");
-                const element = document.getElementById(`item-${itemMaiorEstoque.CODIGO}`);
-                element?.scrollIntoView({ behavior: "smooth", block: "center" });
+                setTimeout(() => {
+                  const element = document.getElementById(`item-${itemMaiorEstoque.CODIGO}`);
+                  element?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  element?.classList.add("bg-accent/20");
+                }, 100);
               }
             }}>
             <div className="flex items-start justify-between">
@@ -257,9 +268,7 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Status Cards - Interativos */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-          {/* Critical Items */}
           <Card
             className="bg-card border-border p-6 border-l-4 border-l-red-500 cursor-pointer hover:bg-card/80 transition-colors"
             onClick={() => handleCategoryFilter("Críticos")}
@@ -292,18 +301,17 @@ export default function Home() {
             </div>
           </Card>
 
-          {/* Attention Items */}
           <Card
-            className="bg-card border-border p-6 border-l-4 border-l-amber-500 cursor-pointer hover:bg-card/80 transition-colors"
+            className="bg-card border-border p-6 border-l-4 border-l-yellow-500 cursor-pointer hover:bg-card/80 transition-colors"
             onClick={() => handleCategoryFilter("Atenção")}
           >
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-1" />
+              <AlertTriangle className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-1" />
               <div className="flex-1">
                 <p className="text-muted-foreground text-sm font-medium">
                   Itens com Atenção
                 </p>
-                <p className="text-2xl font-bold text-amber-500 mt-1">
+                <p className="text-2xl font-bold text-yellow-500 mt-1">
                   {data?.itens_atencao.length || 0}
                 </p>
                 {data?.itens_atencao.length! > 0 && (
@@ -317,7 +325,7 @@ export default function Home() {
                       </li>
                     ))}
                     {data?.itens_atencao.length! > 2 && (
-                      <li className="text-xs text-muted-foreground">
+                      <li className="text-xs text-muted-foreground italic">
                         +{data?.itens_atencao.length! - 2} mais
                       </li>
                     )}
@@ -330,7 +338,6 @@ export default function Home() {
             </div>
           </Card>
 
-          {/* OK Items */}
           <Card
             className="bg-card border-border p-6 border-l-4 border-l-green-500 cursor-pointer hover:bg-card/80 transition-colors"
             onClick={() => handleCategoryFilter("OK")}
@@ -345,12 +352,7 @@ export default function Home() {
                   {data?.status_counts["🟢 OK"] || 0}
                 </p>
                 <p className="text-xs text-muted-foreground mt-3">
-                  {(
-                    ((data?.status_counts["🟢 OK"] || 0) /
-                      (data?.total_itens || 1)) *
-                    100
-                  ).toFixed(0)}
-                  % do inventário
+                  {data && data.total_itens > 0 ? Math.round((data.status_counts["🟢 OK"] || 0) / data.total_itens * 100) : 0}% do inventário
                 </p>
                 <p className="text-xs text-muted-foreground mt-2 italic">
                   Clique para filtrar
@@ -360,47 +362,12 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Consumption Chart - All Items */}
-        <Card className="bg-card border-border p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4">
-            Consumo vs Estoque (Todos os Itens)
-          </h2>
-          <div className="overflow-x-auto">
-            <ResponsiveContainer width="100%" height={800} minWidth={1200}>
-              <BarChart data={consumoData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,0.1)"
-                />
-                <XAxis
-                  dataKey="nome"
-                  stroke="currentColor"
-                  fontSize={12}
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
-                />
-                <YAxis stroke="currentColor" fontSize={12} scale="log" type="number" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "rgba(15, 23, 42, 0.9)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="estoque" fill="#3B82F6" name="Estoque" />
-                <Bar dataKey="consumo" fill="#F59E0B" name="Consumo" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
 
-        {/* Data Table with Filters */}
+
         <Card className="bg-card border-border p-6">
           <div className="mb-6">
             <h2 className="text-lg font-semibold mb-4">Detalhamento de Itens</h2>
             
-            {/* Search Input */}
             <div className="mb-4">
               <input
                 type="text"
@@ -416,99 +383,90 @@ export default function Home() {
                 <TabsTrigger
                   value="Todos"
                   onClick={() => handleCategoryFilter("Todos")}
-                  className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
                 >
                   Todos ({data?.total_itens})
                 </TabsTrigger>
                 <TabsTrigger
-                  value="OK"
-                  onClick={() => handleCategoryFilter("OK")}
-                  className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-400"
+                  value="Críticos"
+                  onClick={() => handleCategoryFilter("Críticos")}
                 >
-                  OK ({data?.status_counts["🟢 OK"] || 0})
+                  Críticos ({data?.itens_criticos.length || 0})
                 </TabsTrigger>
                 <TabsTrigger
                   value="Atenção"
                   onClick={() => handleCategoryFilter("Atenção")}
-                  className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400"
                 >
-                  Atenção ({data?.status_counts["🟡 ATENÇÃO"] || 0})
+                  Atenção ({data?.itens_atencao.length || 0})
                 </TabsTrigger>
                 <TabsTrigger
-                  value="Críticos"
-                  onClick={() => handleCategoryFilter("Críticos")}
-                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+                  value="OK"
+                  onClick={() => handleCategoryFilter("OK")}
                 >
-                  Críticos ({data?.status_counts["🔴 CRÍTICO"] || 0})
+                  OK ({data?.status_counts["OK"] || 0})
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value={selectedCategory} className="mt-4">
+              <TabsContent value="Todos" className="mt-4">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                    <thead className="border-b border-border">
+                      <tr>
+                        <th className="text-left py-3 px-4 font-semibold">
                           Código
                         </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                        <th className="text-left py-3 px-4 font-semibold">
                           Descrição
                         </th>
-                        <th className="text-right py-3 px-4 font-semibold text-muted-foreground">
+                        <th className="text-left py-3 px-4 font-semibold">
                           Estoque
                         </th>
-                        <th className="text-right py-3 px-4 font-semibold text-muted-foreground">
+                        <th className="text-left py-3 px-4 font-semibold">
                           Consumo/Mês
                         </th>
-                        <th className="text-right py-3 px-4 font-semibold text-muted-foreground">
+                        <th className="text-left py-3 px-4 font-semibold">
                           Lead Time
                         </th>
-                        <th className="text-right py-3 px-4 font-semibold text-muted-foreground">
+                        <th className="text-left py-3 px-4 font-semibold">
                           Duração
                         </th>
-                        <th className="text-left py-3 px-4 font-semibold text-muted-foreground">
+                        <th className="text-left py-3 px-4 font-semibold">
                           Data Solicitação
                         </th>
-                        <th className="text-center py-3 px-4 font-semibold text-muted-foreground">
+                        <th className="text-center py-3 px-4 font-semibold">
                           Status
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {filteredData.map((item, idx) => (
+                    <tbody className="divide-y divide-border">
+                      {filteredData.map((item) => (
                         <tr
-                          key={idx}
+                          key={item.CODIGO}
                           id={`item-${item.CODIGO}`}
-                          className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+                          className="hover:bg-secondary/30 transition-colors"
                         >
-                          <td className="py-3 px-4 font-mono text-xs">
+                          <td className="py-3 px-4 text-sm font-mono">
                             {item.CODIGO}
                           </td>
-                          <td className="py-3 px-4 text-foreground/90">
+                          <td className="py-3 px-4 text-sm">
                             {item["DESCRIÇÃO DO ITEM"]}
                           </td>
-                          <td className="py-3 px-4 text-right font-semibold">
-                            {item["SALDO EM ESTOQUE"].toLocaleString("pt-BR", {
-                              maximumFractionDigits: 1,
-                            })}
+                          <td className="py-3 px-4 text-sm">
+                            {item["SALDO EM ESTOQUE"]}
                           </td>
-                          <td className="py-3 px-4 text-right">
-                            {item["CONSUMO MEDIO MENSAL"].toLocaleString(
-                              "pt-BR",
-                              { maximumFractionDigits: 0 }
-                            )}
+                          <td className="py-3 px-4 text-sm">
+                            {item["CONSUMO MEDIO MENSAL"]}
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 px-4 text-sm">
                             {item["LEAD TIME"]} dias
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 px-4 text-sm">
                             <span
                               className={
-                                item["DURAÇÃO EM DIAS"] <= 7
+                                item["DURAÇÃO EM DIAS"] <= 5
                                   ? "text-red-400 font-semibold"
-                                  : item["DURAÇÃO EM DIAS"] <= 30
-                                    ? "text-amber-400 font-semibold"
-                                    : "text-green-400 font-semibold"
+                                  : item["DURAÇÃO EM DIAS"] <= 15
+                                  ? "text-yellow-400 font-semibold"
+                                  : "text-green-400 font-semibold"
                               }
                             >
                               {item["DURAÇÃO EM DIAS"]} dias
@@ -536,13 +494,6 @@ export default function Home() {
           </div>
         </Card>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border bg-card/50 mt-12 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center text-muted-foreground text-sm">
-          <p>Dashboard de Controle de Estoque • Atualizado em tempo real</p>
-        </div>
-      </footer>
     </div>
   );
 }
