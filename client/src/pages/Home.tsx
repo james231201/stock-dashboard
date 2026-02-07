@@ -161,7 +161,9 @@ export default function Home() {
             <Package className="w-8 h-8 text-accent" />
             <h1 className="text-3xl font-bold">Dashboard de Estoque</h1>
           </div>
-
+          <p className="text-muted-foreground">
+            Análise dinâmica de inventário e indicadores de reposição
+          </p>
         </div>
       </header>
 
@@ -376,7 +378,35 @@ export default function Home() {
               />
             </div>
 
-            <div className="mt-4">
+            <Tabs defaultValue="Todos" className="w-full">
+              <TabsList className="bg-secondary/50 border border-border">
+                <TabsTrigger
+                  value="Todos"
+                  onClick={() => handleCategoryFilter("Todos")}
+                >
+                  Todos ({data?.total_itens})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="Críticos"
+                  onClick={() => handleCategoryFilter("Críticos")}
+                >
+                  Críticos ({data?.itens_criticos.length || 0})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="Atenção"
+                  onClick={() => handleCategoryFilter("Atenção")}
+                >
+                  Atenção ({data?.itens_atencao.length || 0})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="OK"
+                  onClick={() => handleCategoryFilter("OK")}
+                >
+                  OK ({data?.status_counts["OK"] || 0})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="Todos" className="mt-4">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="border-b border-border">
@@ -400,7 +430,7 @@ export default function Home() {
                           Duração
                         </th>
                         <th className="text-left py-3 px-4 font-semibold">
-                          Solicitação do Item:
+                          Data Solicitação
                         </th>
                         <th className="text-center py-3 px-4 font-semibold">
                           Status
@@ -459,7 +489,8 @@ export default function Home() {
                     : `Mostrando ${filteredData.length} de ${data?.total_itens} itens`
                   }
                 </p>
-            </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </Card>
       </main>
