@@ -402,7 +402,7 @@ export default function Home() {
                   value="OK"
                   onClick={() => handleCategoryFilter("OK")}
                 >
-                  OK ({data?.status_counts["OK"] || 0})
+                  OK ({data?.status_counts["🟢 OK"] || 0})
                 </TabsTrigger>
               </TabsList>
 
