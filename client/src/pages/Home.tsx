@@ -110,6 +110,12 @@ export default function Home() {
       }))
     : [];
 
+  // Função para formatar data em pt-BR
+  const formatarDataPtBR = (dataString: string) => {
+    const [ano, mes, dia] = dataString.split("-");
+    return `${dia}/${mes}/${ano}`;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -337,7 +343,7 @@ export default function Home() {
             Consumo vs Estoque (Todos os Itens)
           </h2>
           <div className="overflow-x-auto">
-            <ResponsiveContainer width="100%" height={600} minWidth={1200}>
+            <ResponsiveContainer width="100%" height={800} minWidth={1200}>
               <BarChart data={consumoData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -351,7 +357,7 @@ export default function Home() {
                   textAnchor="end"
                   height={100}
                 />
-                <YAxis stroke="currentColor" fontSize={12} />
+                <YAxis stroke="currentColor" fontSize={12} scale="log" type="number" />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "rgba(15, 23, 42, 0.9)",
@@ -474,7 +480,7 @@ export default function Home() {
                             </span>
                           </td>
                           <td className="py-3 px-4 text-sm">
-                            {item["DATA LIMITE DE SOLICITAÇÃO "]}
+                            {formatarDataPtBR(item["DATA LIMITE DE SOLICITAÇÃO "])}
                           </td>
                           <td className="py-3 px-4 text-center">
                             <span className="text-lg">{item.Coluna1}</span>
