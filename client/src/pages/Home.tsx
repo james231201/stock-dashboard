@@ -47,6 +47,7 @@ export default function Home() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [filteredData, setFilteredData] = useState<DataItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,23 +62,45 @@ export default function Home() {
 
   const handleCategoryFilter = (category: string) => {
     setSelectedCategory(category);
+    setSearchTerm("");
     if (!data) return;
 
-    if (category === "Todos") {
-      setFilteredData(data.data_preview);
-    } else if (category === "Críticos") {
-      setFilteredData(
-        data.data_preview.filter((item) => item.Coluna1.includes("🔴"))
-      );
+    let filtered = data.data_preview;
+
+    if (category === "Críticos") {
+      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🔴"));
     } else if (category === "Atenção") {
-      setFilteredData(
-        data.data_preview.filter((item) => item.Coluna1.includes("🟡"))
-      );
+      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🟡"));
     } else if (category === "OK") {
-      setFilteredData(
-        data.data_preview.filter((item) => item.Coluna1.includes("🟢"))
+      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🟢"));
+    }
+
+    setFilteredData(filtered);
+  };
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    if (!data) return;
+
+    let filtered = data.data_preview;
+
+    if (selectedCategory === "Críticos") {
+      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🔴"));
+    } else if (selectedCategory === "Atenção") {
+      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🟡"));
+    } else if (selectedCategory === "OK") {
+      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🟢"));
+    }
+
+    if (term.trim() !== "") {
+      filtered = filtered.filter(
+        (item) =>
+          item.CODIGO.toString().includes(term) ||
+          item["DESCRIÇÃO DO ITEM"].toLowerCase().includes(term.toLowerCase())
       );
     }
+
+    setFilteredData(filtered);
   };
 
   // Encontrar item que precisa comprar primeiro (menor duração)
@@ -376,6 +399,18 @@ export default function Home() {
         <Card className="bg-card border-border p-6">
           <div className="mb-6">
             <h2 className="text-lg font-semibold mb-4">Detalhamento de Itens</h2>
+            
+            {/* Search Input */}
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Buscar por nome ou código..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-full px-4 py-2 bg-secondary/50 border border-border rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+              />
+            </div>
+
             <Tabs defaultValue="Todos" className="w-full">
               <TabsList className="bg-secondary/50 border border-border">
                 <TabsTrigger
@@ -491,7 +526,10 @@ export default function Home() {
                   </table>
                 </div>
                 <p className="text-xs text-muted-foreground mt-4">
-                  Mostrando {filteredData.length} de {data?.total_itens} itens
+                  {searchTerm.trim() !== "" 
+                    ? `Mostrando ${filteredData.length} resultado(s) para "${searchTerm}"`
+                    : `Mostrando ${filteredData.length} de ${data?.total_itens} itens`
+                  }
                 </p>
               </TabsContent>
             </Tabs>
