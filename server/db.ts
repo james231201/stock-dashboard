@@ -90,21 +90,14 @@ export async function getUserByOpenId(openId: string) {
 }
 
 export async function saveDashboardData(data: any) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot save dashboard data: database not available");
-    return;
-  }
-
   try {
-    // Delete old data and insert new
-    await db.delete(dashboardData);
-    await db.insert(dashboardData).values({
-      data: JSON.stringify(data),
-    });
+    const fs = await import('fs').then(m => m.promises);
+    const path = await import('path');
+    const dataPath = path.join(process.cwd(), 'client', 'public', 'data.json');
+    await fs.writeFile(dataPath, JSON.stringify(data, null, 2));
+    console.log('[Dashboard] Dados salvos em data.json');
   } catch (error) {
-    console.error("[Database] Failed to save dashboard data:", error);
-    throw error;
+    console.warn('[Dashboard] Aviso ao salvar data.json:', error);
   }
 }
 

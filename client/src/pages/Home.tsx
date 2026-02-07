@@ -171,6 +171,23 @@ export default function Home() {
       // Salvar no LocalStorage
       localStorage.setItem("dashboardData", JSON.stringify(newData));
 
+      // Salvar no servidor (data.json)
+      try {
+        await fetch("/api/trpc/dashboard.saveData", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            0: {
+              json: newData,
+            },
+          }),
+        });
+      } catch (error) {
+        console.warn("Aviso: Dados não foram salvos no servidor", error);
+      }
+
       setData(newData);
       setFilteredData(processedData);
       setSelectedCategory("Todos");
