@@ -590,7 +590,7 @@ export default function Home() {
                           Duração
                         </th>
                         <th className="text-left py-3 px-4 font-semibold">
-                          Data Solicitação
+                          Solicitação de Compras
                         </th>
                         <th className="text-center py-3 px-4 font-semibold">
                           Status
