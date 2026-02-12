@@ -49,21 +49,7 @@ export default function Home() {
   }, []);
 
   const loadDefaultData = () => {
-    // Tentar carregar dados do LocalStorage primeiro
-    const savedData = localStorage.getItem("dashboardData");
-    if (savedData) {
-      try {
-        const json = JSON.parse(savedData);
-        setData(json);
-        setFilteredData(json.data_preview);
-        setIsLoading(false);
-        return;
-      } catch (error) {
-        console.error("Erro ao carregar dados salvos", error);
-      }
-    }
-
-    // Se não houver dados salvos, carregar do arquivo padrão
+    // Sempre carregar dados do servidor para sincronizar com todos os usuários
     fetch("/data.json")
       .then((res) => res.json())
       .then((json: DashboardData) => {
@@ -76,6 +62,23 @@ export default function Home() {
         toast.error("Erro ao carregar dados iniciais");
       });
   };
+
+  // Recarregar dados a cada 5 segundos para sincronizar com outros usuários
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetch("/data.json")
+        .then((res) => res.json())
+        .then((json: DashboardData) => {
+          setData(json);
+          setFilteredData(json.data_preview);
+        })
+        .catch((error) => {
+          console.error("Erro ao sincronizar dados", error);
+        });
+    }, 5000); // Sincronizar a cada 5 segundos
+
+    return () => clearInterval(interval);
+  }, []);
 
   const determinarStatus = (duracao: number): string => {
     if (duracao <= 0) return "🔴 CRÍTICO";
@@ -168,8 +171,7 @@ export default function Home() {
         data_preview: processedData,
       };
 
-      // Salvar no LocalStorage
-      localStorage.setItem("dashboardData", JSON.stringify(newData));
+      // Não salvar no LocalStorage - sempre usar dados do servidor
 
       // Salvar no servidor (data.json)
       try {
@@ -190,11 +192,15 @@ export default function Home() {
         console.warn("Aviso: Dados não foram salvos no servidor", error);
       }
 
-      setData(newData);
-      setFilteredData(processedData);
+      // Recarregar dados do servidor para sincronizar
+      setTimeout(() => {
+        loadDefaultData();
+      }, 500);
+      
       setSelectedCategory("Todos");
       setSearchTerm("");
       toast.success(`✅ Dados carregados e salvos! ${totalItens} itens processados.`);
+      toast.info("📡 Sincronizando com outros usuários...");
     } catch (error) {
       console.error("Erro ao processar Excel:", error);
       toast.error("❌ Erro ao processar arquivo Excel. Verifique o formato.");

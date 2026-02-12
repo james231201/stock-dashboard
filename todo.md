@@ -10,11 +10,13 @@
 - [x] Sincronização de dados entre usuários
 - [x] Publicação no Manus hosting
 
-## Issues Atuais
+## Issues Resolvidos
 - [x] Servidor funciona perfeitamente em modo produção (HTTP 200)
-- [ ] Domínio publicado retorna 404 - problema com deploy/roteamento no Manus
+- [x] Domínio publicado está acessível
+- [x] Implementada sincronização de dados em tempo real (a cada 5 segundos)
+- [x] Removida dependência do LocalStorage
 
 ## Próximas Ações
-- [ ] Fazer novo checkpoint com build limpo
-- [ ] Republish do dashboard
-- [ ] Verificar acesso ao link publicado
+- [ ] Fazer checkpoint com sincronização implementada
+- [ ] Publicar solução
+- [ ] Testar com múltiplos usuários
