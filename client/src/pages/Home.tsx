@@ -50,7 +50,9 @@ export default function Home() {
 
   const loadDefaultData = () => {
     // Sempre carregar dados do servidor para sincronizar com todos os usuários
-    fetch("/data.json")
+    // Adicionar timestamp para evitar cache
+    const timestamp = new Date().getTime();
+    fetch(`/data.json?t=${timestamp}`)
       .then((res) => res.json())
       .then((json: DashboardData) => {
         setData(json);
@@ -66,7 +68,9 @@ export default function Home() {
   // Recarregar dados a cada 5 segundos para sincronizar com outros usuários
   useEffect(() => {
     const interval = setInterval(() => {
-      fetch("/data.json")
+      // Adicionar timestamp para evitar cache
+      const timestamp = new Date().getTime();
+      fetch(`/data.json?t=${timestamp}`)
         .then((res) => res.json())
         .then((json: DashboardData) => {
           setData(json);
