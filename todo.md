@@ -11,10 +11,10 @@
 - [x] Publicação no Manus hosting
 
 ## Issues Atuais
-- [ ] Link publicado (https://stockdash-iewdqsji.manus.space) não está acessível
-- [ ] Possível problema com deploy ou configuração de hospedagem
+- [x] Servidor funciona perfeitamente em modo produção (HTTP 200)
+- [ ] Domínio publicado retorna 404 - problema com deploy/roteamento no Manus
 
 ## Próximas Ações
-- [ ] Fazer novo checkpoint
+- [ ] Fazer novo checkpoint com build limpo
 - [ ] Republish do dashboard
 - [ ] Verificar acesso ao link publicado
