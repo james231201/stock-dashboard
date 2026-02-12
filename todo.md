@@ -16,7 +16,8 @@
 - [x] Implementada sincronização de dados em tempo real (a cada 5 segundos)
 - [x] Removida dependência do LocalStorage
 
-## Próximas Ações
-- [ ] Fazer checkpoint com sincronização implementada
+## Últimas Atualizações
+- [x] Arquivo data.json atualizado com 25 itens do Excel
+- [x] Sincronização de dados em tempo real implementada
+- [ ] Fazer checkpoint final
 - [ ] Publicar solução
-- [ ] Testar com múltiplos usuários
