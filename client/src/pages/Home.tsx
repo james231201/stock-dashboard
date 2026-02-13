@@ -343,13 +343,11 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="p-6 bg-card text-card-foreground cursor-pointer hover:bg-muted transition-colors" onClick={() => handleCategoryFilter("Todos")}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Total de Itens</p>
-                <p className="text-3xl font-bold text-blue-500">{selectedCategory === "Todos" ? data.total_itens : filteredData.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">Clique para ver todos</p>
-              </div>
-              <Package className="w-8 h-8 text-blue-500" />
+            <div className="flex flex-col items-center justify-center text-center">
+              <p className="text-muted-foreground text-sm">Total de Itens</p>
+              <p className="text-3xl font-bold text-blue-500">{selectedCategory === "Todos" ? data.total_itens : filteredData.length}</p>
+              <p className="text-xs text-muted-foreground mt-1">Clique para ver todos</p>
+              <Package className="w-8 h-8 text-blue-500 mt-2" />
             </div>
           </Card>
 
@@ -359,17 +357,15 @@ export default function Home() {
               handleSearch(itemName);
             }
           }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Comprar Primeiro</p>
-                <p className="text-lg font-bold text-blue-500">
-                  {data.itens_atencao[0] || "N/A"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {data.status_counts["🟡 ATENÇÃO"]} dias
-                </p>
-              </div>
-              <ShoppingCart className="w-8 h-8 text-blue-500" />
+            <div className="flex flex-col items-center justify-center text-center">
+              <p className="text-muted-foreground text-sm">Comprar Primeiro</p>
+              <p className="text-lg font-bold text-blue-500">
+                {data.itens_atencao[0] || "N/A"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {data.status_counts["🟡 ATENÇÃO"]} dias
+              </p>
+              <ShoppingCart className="w-8 h-8 text-blue-500 mt-2" />
             </div>
           </Card>
 
@@ -379,22 +375,20 @@ export default function Home() {
             );
             handleSearch(minItem["DESCRIÇÃO DO ITEM"]);
           }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Menor Estoque</p>
-                <p className="text-lg font-bold text-orange-500">
-                  {data.data_preview.reduce((min, item) =>
-                    item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
-                  )["DESCRIÇÃO DO ITEM"]}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {data.data_preview.reduce((min, item) =>
-                    item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
-                  )["SALDO EM ESTOQUE"]}{" "}
-                  un
-                </p>
-              </div>
-              <TrendingDown className="w-8 h-8 text-orange-500" />
+            <div className="flex flex-col items-center justify-center text-center">
+              <p className="text-muted-foreground text-sm">Menor Estoque</p>
+              <p className="text-lg font-bold text-orange-500">
+                {data.data_preview.reduce((min, item) =>
+                  item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
+                )["DESCRIÇÃO DO ITEM"]}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {data.data_preview.reduce((min, item) =>
+                  item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
+                )["SALDO EM ESTOQUE"]}{" "}
+                un
+              </p>
+              <TrendingDown className="w-8 h-8 text-orange-500 mt-2" />
             </div>
           </Card>
 
@@ -404,22 +398,20 @@ export default function Home() {
             );
             handleSearch(maxItem["DESCRIÇÃO DO ITEM"]);
           }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Maior Estoque</p>
-                <p className="text-lg font-bold text-green-500">
-                  {data.data_preview.reduce((max, item) =>
-                    item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
-                  )["DESCRIÇÃO DO ITEM"]}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {data.data_preview.reduce((max, item) =>
-                    item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
-                  )["SALDO EM ESTOQUE"]}{" "}
-                  un
-                </p>
-              </div>
-              <Package className="w-8 h-8 text-green-500" />
+            <div className="flex flex-col items-center justify-center text-center">
+              <p className="text-muted-foreground text-sm">Maior Estoque</p>
+              <p className="text-lg font-bold text-green-500">
+                {data.data_preview.reduce((max, item) =>
+                  item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
+                )["DESCRIÇÃO DO ITEM"]}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {data.data_preview.reduce((max, item) =>
+                  item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
+                )["SALDO EM ESTOQUE"]}{" "}
+                un
+              </p>
+              <Package className="w-8 h-8 text-green-500 mt-2" />
             </div>
           </Card>
         </div>
@@ -532,7 +524,7 @@ export default function Home() {
                           )}
                         </div>
                       </th>
-                      <th className="px-4 py-2 text-center">Status</th>
+                      <th className="px-4 py-2 text-center cursor-pointer hover:bg-muted" onClick={() => handleSort("Coluna1")}>Status</th>
                       <th className="px-4 py-2 text-center">Próxima Solicitação</th>
                     </tr>
                   </thead>
