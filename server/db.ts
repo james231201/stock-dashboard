@@ -93,12 +93,6 @@ export async function saveDashboardData(input: any) {
   try {
     const fs = await import('fs').then(m => m.promises);
     const path = await import('path');
-    // Em produção, salvar em dist/public; em desenvolvimento, salvar em client/public
-    const isProduction = process.env.NODE_ENV === 'production';
-    const dataPath = isProduction 
-      ? path.join(process.cwd(), 'dist', 'public', 'data.json')
-      : path.join(process.cwd(), 'client', 'public', 'data.json');
-    
     // Extrair o campo json do input
     const dataToSave = input && input.json ? input.json : (input && typeof input === 'object' ? input : {});
     
@@ -114,8 +108,21 @@ export async function saveDashboardData(input: any) {
       data_preview: dataToSave.data_preview || []
     };
     
-    await fs.writeFile(dataPath, JSON.stringify(finalData, null, 2));
-    console.log('[Dashboard] Dados salvos com sucesso!', { total_itens: finalData.total_itens });
+    // Salvar em ambos os lugares: client/public e dist/public
+    const clientPath = path.join(process.cwd(), 'client', 'public', 'data.json');
+    const distPath = path.join(process.cwd(), 'dist', 'public', 'data.json');
+    
+    // Salvar em client/public (sempre)
+    await fs.writeFile(clientPath, JSON.stringify(finalData, null, 2));
+    console.log('[Dashboard] Dados salvos em client/public!', { total_itens: finalData.total_itens });
+    
+    // Tentar salvar em dist/public tambem (se existir)
+    try {
+      await fs.writeFile(distPath, JSON.stringify(finalData, null, 2));
+      console.log('[Dashboard] Dados salvos em dist/public!', { total_itens: finalData.total_itens });
+    } catch (distError) {
+      console.log('[Dashboard] dist/public nao disponivel (normal em desenvolvimento)');
+    }
   } catch (error) {
     console.warn('[Dashboard] Aviso ao salvar data.json:', error);
   }
@@ -125,20 +132,27 @@ export async function getDashboardData() {
   try {
     const fs = await import('fs').then(m => m.promises);
     const path = await import('path');
-    // Em produção, ler de dist/public; em desenvolvimento, ler de client/public
-    const isProduction = process.env.NODE_ENV === 'production';
-    const dataPath = isProduction 
-      ? path.join(process.cwd(), 'dist', 'public', 'data.json')
-      : path.join(process.cwd(), 'client', 'public', 'data.json');
+    // Tentar ler de dist/public primeiro, depois de client/public
+    const distPath = path.join(process.cwd(), 'dist', 'public', 'data.json');
+    const clientPath = path.join(process.cwd(), 'client', 'public', 'data.json');
     
+    // Tentar dist primeiro
     try {
-      const fileContent = await fs.readFile(dataPath, 'utf-8');
+      const fileContent = await fs.readFile(distPath, 'utf-8');
       const data = JSON.parse(fileContent);
-      console.log('[Dashboard] Dados lidos do arquivo:', { total_itens: data.total_itens });
+      console.log('[Dashboard] Dados lidos de dist/public:', { total_itens: data.total_itens });
       return data;
-    } catch (fileError) {
-      console.warn('[Dashboard] Arquivo data.json não encontrado ou inválido:', fileError);
-      return null;
+    } catch (distError) {
+      // Se dist falhar, tentar client
+      try {
+        const fileContent = await fs.readFile(clientPath, 'utf-8');
+        const data = JSON.parse(fileContent);
+        console.log('[Dashboard] Dados lidos de client/public:', { total_itens: data.total_itens });
+        return data;
+      } catch (clientError) {
+        console.warn('[Dashboard] Nenhum arquivo data.json encontrado');
+        return null;
+      }
     }
   } catch (error) {
     console.error('[Dashboard] Erro ao ler dados:', error);
