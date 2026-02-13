@@ -89,14 +89,29 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function saveDashboardData(data: any) {
+export async function saveDashboardData(input: any) {
   try {
     const fs = await import('fs').then(m => m.promises);
     const path = await import('path');
     const dataPath = path.join(process.cwd(), 'client', 'public', 'data.json');
-    const dataToSave = data && typeof data === 'object' ? data : {};
-    await fs.writeFile(dataPath, JSON.stringify(dataToSave, null, 2));
-    console.log('[Dashboard] Dados salvos em data.json com sucesso!');
+    
+    // Extrair o campo json do input
+    const dataToSave = input && input.json ? input.json : (input && typeof input === 'object' ? input : {});
+    
+    // Garantir que os dados tem a estrutura correta
+    const finalData = {
+      total_itens: dataToSave.total_itens || 0,
+      estoque_total: dataToSave.estoque_total || 0,
+      consumo_total: dataToSave.consumo_total || 0,
+      status_counts: dataToSave.status_counts || {},
+      itens_criticos: dataToSave.itens_criticos || [],
+      itens_atencao: dataToSave.itens_atencao || [],
+      media_duracao: dataToSave.media_duracao || 0,
+      data_preview: dataToSave.data_preview || []
+    };
+    
+    await fs.writeFile(dataPath, JSON.stringify(finalData, null, 2));
+    console.log('[Dashboard] Dados salvos com sucesso!', { total_itens: finalData.total_itens });
   } catch (error) {
     console.warn('[Dashboard] Aviso ao salvar data.json:', error);
   }
