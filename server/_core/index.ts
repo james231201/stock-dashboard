@@ -43,6 +43,29 @@ async function startServer() {
       createContext,
     })
   );
+
+  // Rota simples para salvar dados do dashboard
+  app.post("/api/save-dashboard", async (req: express.Request, res: express.Response) => {
+    try {
+      const { json } = req.body;
+      if (!json) {
+        return res.status(400).json({ error: "Missing json data" });
+      }
+
+      const fs = await import("fs").then(m => m.promises);
+      const path = await import("path");
+      const dataPath = path.join(process.cwd(), "client", "public", "data.json");
+      
+      await fs.writeFile(dataPath, JSON.stringify(json, null, 2));
+      console.log("[Dashboard] Dados salvos com sucesso!", { total_itens: json.total_itens });
+      
+      res.json({ success: true, message: "Dados salvos com sucesso" });
+    } catch (error) {
+      console.error("[Dashboard] Erro ao salvar dados:", error);
+      res.status(500).json({ error: "Erro ao salvar dados" });
+    }
+  });
+
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);

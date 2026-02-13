@@ -210,7 +210,7 @@ export default function Home() {
       // Salvar no servidor (data.json)
       try {
         console.log("📤 Enviando dados para o servidor...", { total_itens: newData.total_itens });
-        const response = await fetch("/api/trpc/dashboard.saveData", {
+        const response = await fetch("/api/save-dashboard", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
