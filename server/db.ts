@@ -93,7 +93,11 @@ export async function saveDashboardData(input: any) {
   try {
     const fs = await import('fs').then(m => m.promises);
     const path = await import('path');
-    const dataPath = path.join(process.cwd(), 'client', 'public', 'data.json');
+    // Em produção, salvar em dist/public; em desenvolvimento, salvar em client/public
+    const isProduction = process.env.NODE_ENV === 'production';
+    const dataPath = isProduction 
+      ? path.join(process.cwd(), 'dist', 'public', 'data.json')
+      : path.join(process.cwd(), 'client', 'public', 'data.json');
     
     // Extrair o campo json do input
     const dataToSave = input && input.json ? input.json : (input && typeof input === 'object' ? input : {});
@@ -121,7 +125,11 @@ export async function getDashboardData() {
   try {
     const fs = await import('fs').then(m => m.promises);
     const path = await import('path');
-    const dataPath = path.join(process.cwd(), 'client', 'public', 'data.json');
+    // Em produção, ler de dist/public; em desenvolvimento, ler de client/public
+    const isProduction = process.env.NODE_ENV === 'production';
+    const dataPath = isProduction 
+      ? path.join(process.cwd(), 'dist', 'public', 'data.json')
+      : path.join(process.cwd(), 'client', 'public', 'data.json');
     
     try {
       const fileContent = await fs.readFile(dataPath, 'utf-8');
