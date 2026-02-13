@@ -398,18 +398,18 @@ export default function Home() {
               className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
-          <Tabs defaultValue="Todos" className="w-full">
+          <Tabs value={selectedCategory} onValueChange={handleCategoryFilter} className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="Todos" onClick={() => handleCategoryFilter("Todos")}>
+              <TabsTrigger value="Todos">
                 Todos ({data.total_itens})
               </TabsTrigger>
-              <TabsTrigger value="Críticos" onClick={() => handleCategoryFilter("Críticos")}>
+              <TabsTrigger value="Críticos">
                 Críticos ({data.status_counts["🔴 CRÍTICO"]})
               </TabsTrigger>
-              <TabsTrigger value="Atenção" onClick={() => handleCategoryFilter("Atenção")}>
+              <TabsTrigger value="Atenção">
                 Atenção ({data.status_counts["🟡 ATENÇÃO"]})
               </TabsTrigger>
-              <TabsTrigger value="OK" onClick={() => handleCategoryFilter("OK")}>
+              <TabsTrigger value="OK">
                 OK ({data.status_counts["🟢 OK"]})
               </TabsTrigger>
             </TabsList>
