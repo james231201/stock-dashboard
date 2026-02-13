@@ -353,7 +353,12 @@ export default function Home() {
             </div>
           </Card>
 
-          <Card className="p-6 bg-card text-card-foreground">
+          <Card className="p-6 bg-card text-card-foreground cursor-pointer hover:bg-muted transition-colors" onClick={() => {
+            const itemName = data.itens_atencao[0];
+            if (itemName) {
+              handleSearch(itemName);
+            }
+          }}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">Comprar Primeiro</p>
@@ -368,7 +373,12 @@ export default function Home() {
             </div>
           </Card>
 
-          <Card className="p-6 bg-card text-card-foreground">
+          <Card className="p-6 bg-card text-card-foreground cursor-pointer hover:bg-muted transition-colors" onClick={() => {
+            const minItem = data.data_preview.reduce((min, item) =>
+              item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
+            );
+            handleSearch(minItem["DESCRIÇÃO DO ITEM"]);
+          }}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">Menor Estoque</p>
@@ -388,7 +398,12 @@ export default function Home() {
             </div>
           </Card>
 
-          <Card className="p-6 bg-card text-card-foreground">
+          <Card className="p-6 bg-card text-card-foreground cursor-pointer hover:bg-muted transition-colors" onClick={() => {
+            const maxItem = data.data_preview.reduce((max, item) =>
+              item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
+            );
+            handleSearch(maxItem["DESCRIÇÃO DO ITEM"]);
+          }}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">Maior Estoque</p>
