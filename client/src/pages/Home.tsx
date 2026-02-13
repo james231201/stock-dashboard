@@ -48,24 +48,42 @@ export default function Home() {
     loadDefaultData();
   }, []);
 
-  const loadDefaultData = () => {
-    // Sempre carregar dados do servidor para sincronizar com todos os usuários
-    // Adicionar timestamp para evitar cache
-    const timestamp = new Date().getTime();
-    fetch(`/data.json?t=${timestamp}`)
-      .then((res) => res.json())
-      .then((json: DashboardData) => {
-        setData(json);
-        setFilteredData(json.data_preview);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setIsLoading(false);
-        toast.error("Erro ao carregar dados iniciais");
+  const loadDefaultData = async () => {
+    try {
+      // Carregar dados do servidor via API (não do arquivo estático)
+      const response = await fetch('/api/trpc/dashboard.getData?batch=true', {
+        credentials: 'include',
       });
+      
+      if (response.ok) {
+        const result = await response.json();
+        // tRPC retorna um array com resultado
+        const data = result[0]?.result?.data || result[0]?.data;
+        if (data) {
+          setData(data);
+          setFilteredData(data.data_preview || []);
+        }
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      setIsLoading(false);
+      toast.error('Erro ao carregar dados iniciais');
+    }
   };
 
   // Recarregar dados a cada 5 segundos para sincronizar com outros usuários
+  useEffect(() => {
+    loadDefaultData();
+    
+    const interval = setInterval(() => {
+      loadDefaultData();
+    }, 5000); // Sincronizar a cada 5 segundos
+
+    return () => clearInterval(interval);
+  }, []);
+
+    // Recarregar dados a cada 5 segundos para sincronizar com outros usuários
   useEffect(() => {
     const interval = setInterval(() => {
       // Adicionar timestamp para evitar cache
@@ -179,6 +197,7 @@ export default function Home() {
 
       // Salvar no servidor (data.json)
       try {
+        console.log("📤 Enviando dados para o servidor...", { total_itens: newData.total_itens });
         const response = await fetch("/api/trpc/dashboard.saveData", {
           method: "POST",
           headers: {
@@ -189,11 +208,19 @@ export default function Home() {
           }),
           credentials: "include",
         });
+        
+        const responseText = await response.text();
+        console.log("📥 Resposta do servidor:", response.status, responseText);
+        
         if (response.ok) {
           console.log("✅ Dados salvos no servidor com sucesso!");
+        } else {
+          console.error("❌ Erro ao salvar dados:", response.status, responseText);
+          toast.error(`Erro ao salvar: ${response.status}`);
         }
       } catch (error) {
-        console.warn("Aviso: Dados não foram salvos no servidor", error);
+        console.error("❌ Erro na requisição:", error);
+        toast.error("Erro ao salvar dados no servidor");
       }
 
       // Recarregar dados do servidor para sincronizar
