@@ -51,6 +51,7 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
 
   // Usar tRPC para carregar dados
   const { data: dashboardData, refetch: refetchData } = trpc.dashboard.getData.useQuery(undefined, {
@@ -77,6 +78,7 @@ export default function Home() {
       setData(dashboardData);
       setFilteredData(dashboardData.data_preview || []);
       setLoading(false);
+      setLastUpdateTime(new Date());
     }
   }, [dashboardData]);
 
@@ -182,6 +184,7 @@ export default function Home() {
       
       setSelectedCategory("Todos");
       setSearchTerm("");
+      setLastUpdateTime(new Date()); // Atualizar data de última atualização
       toast.success(`✅ Dados carregados e salvos! ${totalItens} itens processados.`);
       toast.info("📡 Sincronizando com outros usuários...");
     } catch (error) {
@@ -341,7 +344,7 @@ export default function Home() {
               Análise dinâmica de inventário e indicadores de reposição
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              Última atualização: {data ? new Date().toLocaleString('pt-BR') : 'Carregando...'}
+              Última atualização: {lastUpdateTime ? lastUpdateTime.toLocaleString('pt-BR') : 'Carregando...'}
             </p>
           </div>
         </div>
