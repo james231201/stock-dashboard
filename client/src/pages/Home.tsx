@@ -11,6 +11,8 @@ import {
   Package,
   ShoppingCart,
   Upload,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { trpc } from "@/lib/trpc";
@@ -37,6 +39,9 @@ interface DashboardData {
   data_preview: DataItem[];
 }
 
+type SortKey = keyof DataItem | null;
+type SortOrder = 'asc' | 'desc';
+
 export default function Home() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [filteredData, setFilteredData] = useState<DataItem[]>([]);
@@ -44,6 +49,8 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   // Usar tRPC para carregar dados
   const { data: dashboardData, refetch: refetchData } = trpc.dashboard.getData.useQuery(undefined, {
@@ -238,6 +245,55 @@ export default function Home() {
     setFilteredData(filtered);
   };
 
+  const handleSort = (key: SortKey) => {
+    if (!filteredData) return;
+
+    let newOrder: SortOrder = 'asc';
+    if (sortKey === key && sortOrder === 'asc') {
+      newOrder = 'desc';
+    }
+
+    setSortKey(key);
+    setSortOrder(newOrder);
+
+    const sorted = [...filteredData].sort((a, b) => {
+      if (!key) return 0;
+
+      const aVal = a[key];
+      const bVal = b[key];
+
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return newOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return newOrder === 'asc' 
+          ? aVal.localeCompare(bVal, 'pt-BR')
+          : bVal.localeCompare(aVal, 'pt-BR');
+      }
+
+      return 0;
+    });
+
+    setFilteredData(sorted);
+  };
+
+  const SortHeader = ({ label, sortKeyValue }: { label: string; sortKeyValue: SortKey }) => (
+    <th 
+      className="px-4 py-2 text-left cursor-pointer hover:bg-muted transition-colors"
+      onClick={() => handleSort(sortKeyValue)}
+    >
+      <div className="flex items-center gap-2">
+        {label}
+        {sortKey === sortKeyValue && (
+          sortOrder === 'asc' 
+            ? <ArrowUp className="w-4 h-4" />
+            : <ArrowDown className="w-4 h-4" />
+        )}
+      </div>
+    </th>
+  );
+
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Carregando dados...</div>;
   }
@@ -418,12 +474,48 @@ export default function Home() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-2 text-left">Código</th>
-                      <th className="px-4 py-2 text-left">Descrição</th>
-                      <th className="px-4 py-2 text-right">Estoque</th>
-                      <th className="px-4 py-2 text-right">Consumo/mês</th>
-                      <th className="px-4 py-2 text-right">Lead Time</th>
-                      <th className="px-4 py-2 text-right">Duração (dias)</th>
+                      <SortHeader label="Código" sortKeyValue="CODIGO" />
+                      <SortHeader label="Descrição" sortKeyValue="DESCRIÇÃO DO ITEM" />
+                      <th className="px-4 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => handleSort("SALDO EM ESTOQUE")}>
+                        <div className="flex items-center justify-end gap-2">
+                          Estoque
+                          {sortKey === "SALDO EM ESTOQUE" && (
+                            sortOrder === "asc" 
+                              ? <ArrowUp className="w-4 h-4" />
+                              : <ArrowDown className="w-4 h-4" />
+                          )}
+                        </div>
+                      </th>
+                      <th className="px-4 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => handleSort("CONSUMO MEDIO MENSAL")}>
+                        <div className="flex items-center justify-end gap-2">
+                          Consumo/mês
+                          {sortKey === "CONSUMO MEDIO MENSAL" && (
+                            sortOrder === "asc" 
+                              ? <ArrowUp className="w-4 h-4" />
+                              : <ArrowDown className="w-4 h-4" />
+                          )}
+                        </div>
+                      </th>
+                      <th className="px-4 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => handleSort("LEAD TIME")}>
+                        <div className="flex items-center justify-end gap-2">
+                          Lead Time
+                          {sortKey === "LEAD TIME" && (
+                            sortOrder === "asc" 
+                              ? <ArrowUp className="w-4 h-4" />
+                              : <ArrowDown className="w-4 h-4" />
+                          )}
+                        </div>
+                      </th>
+                      <th className="px-4 py-2 text-right cursor-pointer hover:bg-muted" onClick={() => handleSort("DURAÇÃO EM DIAS")}>
+                        <div className="flex items-center justify-end gap-2">
+                          Duração (dias)
+                          {sortKey === "DURAÇÃO EM DIAS" && (
+                            sortOrder === "asc" 
+                              ? <ArrowUp className="w-4 h-4" />
+                              : <ArrowDown className="w-4 h-4" />
+                          )}
+                        </div>
+                      </th>
                       <th className="px-4 py-2 text-center">Status</th>
                     </tr>
                   </thead>
