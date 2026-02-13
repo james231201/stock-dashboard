@@ -13,6 +13,7 @@ import {
   Upload,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import { trpc } from "@/lib/trpc";
 
 interface DataItem {
   CODIGO: number;
@@ -41,78 +42,35 @@ export default function Home() {
   const [filteredData, setFilteredData] = useState<DataItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    loadDefaultData();
-  }, []);
+  // Usar tRPC para carregar dados
+  const { data: dashboardData, refetch: refetchData } = trpc.dashboard.getData.useQuery(undefined, {
+    refetchInterval: 5000, // Sincronizar a cada 5 segundos
+  });
 
-  const loadDefaultData = () => {
-    try {
-      // Carregar dados do arquivo data.json com cache-busting
-      const timestamp = new Date().getTime();
-      fetch(`/data.json?t=${timestamp}`, {
-        credentials: 'include',
-      })
-        .then((res) => res.json())
-        .then((json: DashboardData) => {
-          console.log('✅ Dados carregados:', json.total_itens, 'itens');
-          setData(json);
-          setFilteredData(json.data_preview || []);
-          setIsLoading(false);
-        })
-        .catch((error) => {
-          console.error('Erro ao carregar dados:', error);
-          setIsLoading(false);
-          toast.error('Erro ao carregar dados iniciais');
-        });
-    } catch (error) {
-      console.error('Erro:', error);
-      setIsLoading(false);
+  // Usar tRPC para salvar dados
+  const saveDataMutation = trpc.dashboard.saveData.useMutation({
+    onSuccess: () => {
+      console.log("✅ Dados salvos com sucesso via tRPC!");
+      refetchData();
+    },
+    onError: (error) => {
+      console.error("❌ Erro ao salvar dados:", error);
+      toast.error("Erro ao salvar dados no servidor");
+    },
+  });
+
+  // Atualizar estado quando dados chegam do servidor
+  useEffect(() => {
+    if (dashboardData) {
+      console.log("📊 Dados recebidos do servidor:", { total_itens: dashboardData.total_itens });
+      setData(dashboardData);
+      setFilteredData(dashboardData.data_preview || []);
+      setLoading(false);
     }
-  };
-
-  // Recarregar dados a cada 5 segundos para sincronizar com outros usuários
-  useEffect(() => {
-    loadDefaultData();
-    
-    const interval = setInterval(() => {
-      loadDefaultData();
-    }, 5000); // Sincronizar a cada 5 segundos
-
-    return () => clearInterval(interval);
-  }, []);
-
-    // Recarregar dados a cada 5 segundos para sincronizar com outros usuários
-  useEffect(() => {
-    loadDefaultData();
-    
-    const interval = setInterval(() => {
-      loadDefaultData();
-    }, 5000); // Sincronizar a cada 5 segundos
-
-    return () => clearInterval(interval);
-  }, []);
-
-    // Recarregar dados a cada 5 segundos para sincronizar com outros usuários
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Adicionar timestamp para evitar cache
-      const timestamp = new Date().getTime();
-      fetch(`/data.json?t=${timestamp}`)
-        .then((res) => res.json())
-        .then((json: DashboardData) => {
-          setData(json);
-          setFilteredData(json.data_preview);
-        })
-        .catch((error) => {
-          console.error("Erro ao sincronizar dados", error);
-        });
-    }, 5000); // Sincronizar a cada 5 segundos
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [dashboardData]);
 
   const determinarStatus = (duracao: number): string => {
     if (duracao <= 0) return "🔴 CRÍTICO";
@@ -121,7 +79,6 @@ export default function Home() {
   };
 
   const converterDataExcel = (valor: any): string => {
-    // Se for número (formato Excel), converter para data
     if (typeof valor === "number") {
       const dataExcel = new Date((valor - 25569) * 86400 * 1000);
       const dia = String(dataExcel.getDate()).padStart(2, "0");
@@ -129,18 +86,14 @@ export default function Home() {
       const ano = dataExcel.getFullYear();
       return `${dia}/${mes}/${ano}`;
     }
-    // Se for string, tentar converter
     if (typeof valor === "string") {
-      // Se já está em formato DD/MM/YYYY, retornar como está
       if (/^\d{2}\/\d{2}\/\d{4}$/.test(valor)) {
         return valor;
       }
-      // Se está em formato YYYY-MM-DD, converter
       if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
         const [ano, mes, dia] = valor.split("-");
         return `${dia}/${mes}/${ano}`;
       }
-      // Se está em formato DD-MM-YYYY, converter
       if (/^\d{2}-\d{2}-\d{4}$/.test(valor)) {
         const [dia, mes, ano] = valor.split("-");
         return `${dia}/${mes}/${ano}`;
@@ -214,41 +167,10 @@ export default function Home() {
         data_preview: processedData,
       };
 
-      // Não salvar no LocalStorage - sempre usar dados do servidor
-
-      // Salvar no servidor (data.json)
-      try {
-        console.log("📤 Enviando dados para o servidor...", { total_itens: newData.total_itens, data_preview_length: newData.data_preview.length });
-        console.log("📋 Dados completos:", newData);
-        const response = await fetch("/api/save-dashboard", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            json: newData,
-          }),
-          credentials: "include",
-        });
-        
-        const responseText = await response.text();
-        console.log("📥 Resposta do servidor:", response.status, responseText);
-        
-        if (response.ok) {
-          console.log("✅ Dados salvos no servidor com sucesso!");
-        } else {
-          console.error("❌ Erro ao salvar dados:", response.status, responseText);
-          toast.error(`Erro ao salvar: ${response.status}`);
-        }
-      } catch (error) {
-        console.error("❌ Erro na requisição:", error);
-        toast.error("Erro ao salvar dados no servidor");
-      }
-
-      // Recarregar dados do servidor para sincronizar
-      setTimeout(() => {
-        loadDefaultData();
-      }, 500);
+      console.log("📤 Enviando dados para o servidor via tRPC...", { total_itens: newData.total_itens });
+      
+      // Usar tRPC para salvar
+      await saveDataMutation.mutateAsync(newData);
       
       setSelectedCategory("Todos");
       setSearchTerm("");
@@ -256,7 +178,7 @@ export default function Home() {
       toast.info("📡 Sincronizando com outros usuários...");
     } catch (error) {
       console.error("Erro ao processar Excel:", error);
-      toast.error("❌ Erro ao processar arquivo Excel. Verifique o formato.");
+      toast.error("Erro ao processar arquivo Excel");
     } finally {
       setUploading(false);
     }
@@ -281,11 +203,11 @@ export default function Home() {
     let filtered = data.data_preview;
 
     if (category === "Críticos") {
-      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🔴"));
+      filtered = filtered.filter((item) => item.Coluna1.includes("🔴"));
     } else if (category === "Atenção") {
-      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🟡"));
+      filtered = filtered.filter((item) => item.Coluna1.includes("🟡"));
     } else if (category === "OK") {
-      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🟢"));
+      filtered = filtered.filter((item) => item.Coluna1.includes("🟢"));
     }
 
     setFilteredData(filtered);
@@ -298,60 +220,42 @@ export default function Home() {
     let filtered = data.data_preview;
 
     if (selectedCategory === "Críticos") {
-      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🔴"));
+      filtered = filtered.filter((item) => item.Coluna1.includes("🔴"));
     } else if (selectedCategory === "Atenção") {
-      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🟡"));
+      filtered = filtered.filter((item) => item.Coluna1.includes("🟡"));
     } else if (selectedCategory === "OK") {
-      filtered = data.data_preview.filter((item) => item.Coluna1.includes("🟢"));
+      filtered = filtered.filter((item) => item.Coluna1.includes("🟢"));
     }
 
-    if (term.trim() !== "") {
+    if (term) {
       filtered = filtered.filter(
         (item) =>
-          item.CODIGO.toString().includes(term) ||
-          item["DESCRIÇÃO DO ITEM"].toLowerCase().includes(term.toLowerCase())
+          item["DESCRIÇÃO DO ITEM"].toLowerCase().includes(term.toLowerCase()) ||
+          item.CODIGO.toString().includes(term)
       );
     }
 
     setFilteredData(filtered);
   };
 
-  const itemComprarPrimeiro = data
-    ? data.data_preview.reduce((prev, current) =>
-        prev["DURAÇÃO EM DIAS"] < current["DURAÇÃO EM DIAS"] ? prev : current
-      )
-    : null;
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Carregando dados...</div>;
+  }
 
-  const itemMenorEstoque = data
-    ? data.data_preview.reduce((prev, current) =>
-        prev["SALDO EM ESTOQUE"] < current["SALDO EM ESTOQUE"] ? prev : current
-      )
-    : null;
-
-  const itemMaiorEstoque = data
-    ? data.data_preview.reduce((prev, current) =>
-        prev["SALDO EM ESTOQUE"] > current["SALDO EM ESTOQUE"] ? prev : current
-      )
-    : null;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-foreground text-lg">Carregando dashboard...</div>
-      </div>
-    );
+  if (!data) {
+    return <div className="flex items-center justify-center h-screen">Nenhum dado disponível</div>;
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <Package className="w-8 h-8 text-accent" />
-              <h1 className="text-3xl font-bold">Dashboard de Estoque</h1>
-            </div>
-            <div className="flex items-center gap-2">
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-background sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+              <Package className="w-8 h-8" />
+              Dashboard de Estoque
+            </h1>
+            <div className="flex items-center gap-4 mt-4">
               <input
                 type="file"
                 accept=".xlsx,.xls"
@@ -380,337 +284,166 @@ export default function Home() {
           </p>
         </div>
       </header>
-
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card
-            className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
-            onClick={() => {
-              handleCategoryFilter("Todos");
-            }}
-          >
-            <div className="flex items-start justify-between">
+          <Card className="p-6 bg-card text-card-foreground">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Total de Itens
-                </p>
-                <p className="text-3xl font-bold text-accent mt-2">
-                  {data?.total_itens}
-                </p>
+                <p className="text-muted-foreground text-sm">Total de Itens</p>
+                <p className="text-3xl font-bold text-blue-500">{data.total_itens}</p>
               </div>
-              <Package className="w-8 h-8 text-accent/60" />
+              <Package className="w-8 h-8 text-blue-500" />
             </div>
           </Card>
 
-          <Card
-            className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
-            onClick={() => {
-              if (itemComprarPrimeiro) {
-                handleCategoryFilter("Todos");
-                setTimeout(() => {
-                  const element = document.getElementById(
-                    `item-${itemComprarPrimeiro.CODIGO}`
-                  );
-                  element?.scrollIntoView({ behavior: "smooth", block: "center" });
-                  element?.classList.add("bg-accent/20");
-                }, 100);
-              }
-            }}
-          >
-            <div className="flex items-start justify-between">
+          <Card className="p-6 bg-card text-card-foreground">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Comprar Primeiro
+                <p className="text-muted-foreground text-sm">Comprar Primeiro</p>
+                <p className="text-lg font-bold text-blue-500">
+                  {data.itens_atencao[0] || "N/A"}
                 </p>
-                <p className="text-sm font-semibold text-accent mt-2 line-clamp-2">
-                  {itemComprarPrimeiro?.["DESCRIÇÃO DO ITEM"]}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {itemComprarPrimeiro?.["DURAÇÃO EM DIAS"]} dias
+                <p className="text-xs text-muted-foreground">
+                  {data.status_counts["🟡 ATENÇÃO"]} dias
                 </p>
               </div>
-              <ShoppingCart className="w-8 h-8 text-accent/60" />
+              <ShoppingCart className="w-8 h-8 text-blue-500" />
             </div>
           </Card>
 
-          <Card
-            className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
-            onClick={() => {
-              if (itemMenorEstoque) {
-                handleCategoryFilter("Todos");
-                setTimeout(() => {
-                  const element = document.getElementById(
-                    `item-${itemMenorEstoque.CODIGO}`
-                  );
-                  element?.scrollIntoView({ behavior: "smooth", block: "center" });
-                  element?.classList.add("bg-accent/20");
-                }, 100);
-              }
-            }}
-          >
-            <div className="flex items-start justify-between">
+          <Card className="p-6 bg-card text-card-foreground">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Menor Estoque
+                <p className="text-muted-foreground text-sm">Menor Estoque</p>
+                <p className="text-lg font-bold text-orange-500">
+                  {data.data_preview.reduce((min, item) =>
+                    item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
+                  )["DESCRIÇÃO DO ITEM"]}
                 </p>
-                <p className="text-sm font-semibold text-accent mt-2 line-clamp-2">
-                  {itemMenorEstoque?.["DESCRIÇÃO DO ITEM"]}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {itemMenorEstoque?.["SALDO EM ESTOQUE"]} un
+                <p className="text-xs text-muted-foreground">
+                  {data.data_preview.reduce((min, item) =>
+                    item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
+                  )["SALDO EM ESTOQUE"]}{" "}
+                  un
                 </p>
               </div>
-              <TrendingDown className="w-8 h-8 text-accent/60" />
+              <TrendingDown className="w-8 h-8 text-orange-500" />
             </div>
           </Card>
 
-          <Card
-            className="bg-card border-border p-6 hover:border-accent/50 transition-colors cursor-pointer"
-            onClick={() => {
-              if (itemMaiorEstoque) {
-                handleCategoryFilter("Todos");
-                setTimeout(() => {
-                  const element = document.getElementById(
-                    `item-${itemMaiorEstoque.CODIGO}`
-                  );
-                  element?.scrollIntoView({ behavior: "smooth", block: "center" });
-                  element?.classList.add("bg-accent/20");
-                }, 100);
-              }
-            }}
-          >
-            <div className="flex items-start justify-between">
+          <Card className="p-6 bg-card text-card-foreground">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm font-medium">
-                  Maior Estoque
+                <p className="text-muted-foreground text-sm">Maior Estoque</p>
+                <p className="text-lg font-bold text-green-500">
+                  {data.data_preview.reduce((max, item) =>
+                    item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
+                  )["DESCRIÇÃO DO ITEM"]}
                 </p>
-                <p className="text-sm font-semibold text-accent mt-2 line-clamp-2">
-                  {itemMaiorEstoque?.["DESCRIÇÃO DO ITEM"]}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {itemMaiorEstoque?.["SALDO EM ESTOQUE"]} un
+                <p className="text-xs text-muted-foreground">
+                  {data.data_preview.reduce((max, item) =>
+                    item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
+                  )["SALDO EM ESTOQUE"]}{" "}
+                  un
                 </p>
               </div>
-              <Package className="w-8 h-8 text-accent/60" />
+              <Package className="w-8 h-8 text-green-500" />
             </div>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-          <Card
-            className="bg-card border-border p-6 border-l-4 border-l-red-500 cursor-pointer hover:bg-card/80 transition-colors"
-            onClick={() => handleCategoryFilter("Críticos")}
-          >
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <p className="text-muted-foreground text-sm font-medium">
-                  Itens Críticos
-                </p>
-                <p className="text-2xl font-bold text-red-500 mt-1">
-                  {data?.itens_criticos.length || 0}
-                </p>
-                {data?.itens_criticos.length! > 0 && (
-                  <ul className="mt-3 space-y-1">
-                    {data?.itens_criticos.map((item, idx) => (
-                      <li
-                        key={idx}
-                        className="text-xs text-muted-foreground truncate"
-                      >
-                        • {item}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <p className="text-xs text-muted-foreground mt-3 italic">
-                  Clique para filtrar
-                </p>
+          <Card className="p-6 bg-card text-card-foreground border-l-4 border-l-red-500">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+              <div>
+                <p className="text-muted-foreground text-sm">Itens Críticos</p>
+                <p className="text-3xl font-bold text-red-500">{data.status_counts["🔴 CRÍTICO"]}</p>
+                <p className="text-xs text-muted-foreground mt-1">Clique para filtrar</p>
               </div>
             </div>
           </Card>
 
-          <Card
-            className="bg-card border-border p-6 border-l-4 border-l-yellow-500 cursor-pointer hover:bg-card/80 transition-colors"
-            onClick={() => handleCategoryFilter("Atenção")}
-          >
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <p className="text-muted-foreground text-sm font-medium">
-                  Itens com Atenção
-                </p>
-                <p className="text-2xl font-bold text-yellow-500 mt-1">
-                  {data?.itens_atencao.length || 0}
-                </p>
-                {data?.itens_atencao.length! > 0 && (
-                  <ul className="mt-3 space-y-1">
-                    {data?.itens_atencao.slice(0, 2).map((item, idx) => (
-                      <li
-                        key={idx}
-                        className="text-xs text-muted-foreground truncate"
-                      >
-                        • {item}
-                      </li>
-                    ))}
-                    {data?.itens_atencao.length! > 2 && (
-                      <li className="text-xs text-muted-foreground">
-                        +{data?.itens_atencao.length! - 2} mais
-                      </li>
-                    )}
-                  </ul>
-                )}
-                <p className="text-xs text-muted-foreground mt-3 italic">
-                  Clique para filtrar
-                </p>
+          <Card className="p-6 bg-card text-card-foreground border-l-4 border-l-yellow-500">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-8 h-8 text-yellow-500" />
+              <div>
+                <p className="text-muted-foreground text-sm">Itens com Atenção</p>
+                <p className="text-3xl font-bold text-yellow-500">{data.status_counts["🟡 ATENÇÃO"]}</p>
+                <p className="text-xs text-muted-foreground mt-1">Clique para filtrar</p>
               </div>
             </div>
           </Card>
 
-          <Card
-            className="bg-card border-border p-6 border-l-4 border-l-green-500 cursor-pointer hover:bg-card/80 transition-colors"
-            onClick={() => handleCategoryFilter("OK")}
-          >
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <p className="text-muted-foreground text-sm font-medium">
-                  Itens OK
-                </p>
-                <p className="text-2xl font-bold text-green-500 mt-1">
-                  {data?.status_counts["🟢 OK"] || 0}
-                </p>
-                <p className="text-xs text-muted-foreground mt-3">
-                  {data && data.total_itens > 0
-                    ? Math.round(
-                        ((data.status_counts["🟢 OK"] || 0) / data.total_itens) * 100
-                      )
-                    : 0}
-                  % do inventário
-                </p>
-                <p className="text-xs text-muted-foreground mt-2 italic">
-                  Clique para filtrar
-                </p>
+          <Card className="p-6 bg-card text-card-foreground border-l-4 border-l-green-500">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-8 h-8 text-green-500" />
+              <div>
+                <p className="text-muted-foreground text-sm">Itens OK</p>
+                <p className="text-3xl font-bold text-green-500">{data.status_counts["🟢 OK"]}</p>
+                <p className="text-xs text-muted-foreground mt-1">88% do inventário</p>
               </div>
             </div>
           </Card>
         </div>
 
-        <Card className="bg-card border-border p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-4">Detalhamento de Itens</h2>
-
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Buscar por nome ou código..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full px-4 py-2 bg-secondary/50 border border-border rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-              />
-            </div>
-
-            <Tabs value={selectedCategory} onValueChange={handleCategoryFilter} className="mt-4">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="Todos">
-                  Todos ({data?.total_itens || 0})
-                </TabsTrigger>
-                <TabsTrigger value="Críticos">
-                  Críticos ({data?.status_counts["🔴 CRÍTICO"] || 0})
-                </TabsTrigger>
-                <TabsTrigger value="Atenção">
-                  Atenção ({data?.status_counts["🟡 ATENÇÃO"] || 0})
-                </TabsTrigger>
-                <TabsTrigger value="OK">
-                  OK ({data?.status_counts["🟢 OK"] || 0})
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value={selectedCategory} className="mt-4">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-border">
-                      <tr>
-                        <th className="text-left py-3 px-4 font-semibold">
-                          Código
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold">
-                          Descrição
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold">
-                          Estoque
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold">
-                          Consumo/Mês
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold">
-                          Lead Time
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold">
-                          Duração
-                        </th>
-                        <th className="text-left py-3 px-4 font-semibold">
-                          Solicitação de Compras
-                        </th>
-                        <th className="text-center py-3 px-4 font-semibold">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {filteredData.map((item) => (
-                        <tr
-                          key={item.CODIGO}
-                          id={`item-${item.CODIGO}`}
-                          className="hover:bg-secondary/30 transition-colors"
-                        >
-                          <td className="py-3 px-4 text-sm font-mono">
-                            {item.CODIGO}
-                          </td>
-                          <td className="py-3 px-4 text-sm">
-                            {item["DESCRIÇÃO DO ITEM"]}
-                          </td>
-                          <td className="py-3 px-4 text-sm">
-                            {item["SALDO EM ESTOQUE"]}
-                          </td>
-                          <td className="py-3 px-4 text-sm">
-                            {item["CONSUMO MEDIO MENSAL"]}
-                          </td>
-                          <td className="py-3 px-4 text-sm">
-                            {item["LEAD TIME"]} dias
-                          </td>
-                          <td className="py-3 px-4 text-sm">
-                            <span
-                              className={
-                                item["DURAÇÃO EM DIAS"] <= 5
-                                  ? "text-red-400 font-semibold"
-                                  : item["DURAÇÃO EM DIAS"] <= 15
-                                  ? "text-yellow-400 font-semibold"
-                                  : "text-green-400 font-semibold"
-                              }
-                            >
-                              {item["DURAÇÃO EM DIAS"]} dias
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-sm">
-                            {item["DATA LIMITE DE SOLICITAÇÃO "]}
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="text-lg">{item.Coluna1}</span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-xs text-muted-foreground mt-4">
-                  {searchTerm.trim() !== "" 
-                    ? `Mostrando ${filteredData.length} resultado(s) para "${searchTerm}"`
-                    : `Mostrando ${filteredData.length} de ${data?.total_itens} itens`
-                  }
-                </p>
-              </TabsContent>
-            </Tabs>
+        <Card className="p-6 bg-card text-card-foreground">
+          <h2 className="text-xl font-bold mb-4">Detalhamento de Itens</h2>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Buscar por nome ou código..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
+            />
           </div>
+          <Tabs defaultValue="Todos" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="Todos" onClick={() => handleCategoryFilter("Todos")}>
+                Todos ({data.total_itens})
+              </TabsTrigger>
+              <TabsTrigger value="Críticos" onClick={() => handleCategoryFilter("Críticos")}>
+                Críticos ({data.status_counts["🔴 CRÍTICO"]})
+              </TabsTrigger>
+              <TabsTrigger value="Atenção" onClick={() => handleCategoryFilter("Atenção")}>
+                Atenção ({data.status_counts["🟡 ATENÇÃO"]})
+              </TabsTrigger>
+              <TabsTrigger value="OK" onClick={() => handleCategoryFilter("OK")}>
+                OK ({data.status_counts["🟢 OK"]})
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value={selectedCategory} className="mt-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Código</th>
+                      <th className="px-4 py-2 text-left">Descrição</th>
+                      <th className="px-4 py-2 text-right">Estoque</th>
+                      <th className="px-4 py-2 text-right">Consumo/mês</th>
+                      <th className="px-4 py-2 text-right">Lead Time</th>
+                      <th className="px-4 py-2 text-right">Duração (dias)</th>
+                      <th className="px-4 py-2 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredData.map((item, idx) => (
+                      <tr key={idx} className="border-b border-border hover:bg-muted">
+                        <td className="px-4 py-2">{item.CODIGO}</td>
+                        <td className="px-4 py-2">{item["DESCRIÇÃO DO ITEM"]}</td>
+                        <td className="px-4 py-2 text-right">{item["SALDO EM ESTOQUE"]}</td>
+                        <td className="px-4 py-2 text-right">{item["CONSUMO MEDIO MENSAL"]}</td>
+                        <td className="px-4 py-2 text-right">{item["LEAD TIME"]}</td>
+                        <td className="px-4 py-2 text-right font-bold">{item["DURAÇÃO EM DIAS"]}</td>
+                        <td className="px-4 py-2 text-center">{item.Coluna1}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+          </Tabs>
         </Card>
       </main>
     </div>

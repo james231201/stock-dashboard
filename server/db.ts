@@ -118,20 +118,22 @@ export async function saveDashboardData(input: any) {
 }
 
 export async function getDashboardData() {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get dashboard data: database not available");
-    return null;
-  }
-
   try {
-    const result = await db.select().from(dashboardData).limit(1);
-    if (result.length > 0) {
-      return JSON.parse(result[0].data);
+    const fs = await import('fs').then(m => m.promises);
+    const path = await import('path');
+    const dataPath = path.join(process.cwd(), 'client', 'public', 'data.json');
+    
+    try {
+      const fileContent = await fs.readFile(dataPath, 'utf-8');
+      const data = JSON.parse(fileContent);
+      console.log('[Dashboard] Dados lidos do arquivo:', { total_itens: data.total_itens });
+      return data;
+    } catch (fileError) {
+      console.warn('[Dashboard] Arquivo data.json não encontrado ou inválido:', fileError);
+      return null;
     }
-    return null;
   } catch (error) {
-    console.error("[Database] Failed to get dashboard data:", error);
+    console.error('[Dashboard] Erro ao ler dados:', error);
     return null;
   }
 }
