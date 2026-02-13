@@ -409,7 +409,7 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-          <Card className="p-6 bg-card text-card-foreground border-l-4 border-l-red-500">
+          <Card className="p-6 bg-card text-card-foreground border-l-4 border-l-red-500 cursor-pointer hover:bg-muted transition-colors" onClick={() => handleCategoryFilter("Críticos")}>
             <div className="flex items-center gap-3">
               <AlertCircle className="w-8 h-8 text-red-500" />
               <div>
@@ -420,7 +420,7 @@ export default function Home() {
             </div>
           </Card>
 
-          <Card className="p-6 bg-card text-card-foreground border-l-4 border-l-yellow-500">
+          <Card className="p-6 bg-card text-card-foreground border-l-4 border-l-yellow-500 cursor-pointer hover:bg-muted transition-colors" onClick={() => handleCategoryFilter("Atenção")}>
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-8 h-8 text-yellow-500" />
               <div>
@@ -431,13 +431,13 @@ export default function Home() {
             </div>
           </Card>
 
-          <Card className="p-6 bg-card text-card-foreground border-l-4 border-l-green-500">
+          <Card className="p-6 bg-card text-card-foreground border-l-4 border-l-green-500 cursor-pointer hover:bg-muted transition-colors" onClick={() => handleCategoryFilter("OK")}>
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-8 h-8 text-green-500" />
               <div>
                 <p className="text-muted-foreground text-sm">Itens OK</p>
                 <p className="text-3xl font-bold text-green-500">{data.status_counts["🟢 OK"]}</p>
-                <p className="text-xs text-muted-foreground mt-1">88% do inventário</p>
+                <p className="text-xs text-muted-foreground mt-1">Clique para filtrar</p>
               </div>
             </div>
           </Card>
@@ -517,6 +517,7 @@ export default function Home() {
                         </div>
                       </th>
                       <th className="px-4 py-2 text-center">Status</th>
+                      <th className="px-4 py-2 text-center">Próxima Solicitação</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -529,6 +530,7 @@ export default function Home() {
                         <td className="px-4 py-2 text-right">{item["LEAD TIME"]}</td>
                         <td className="px-4 py-2 text-right font-bold">{item["DURAÇÃO EM DIAS"]}</td>
                         <td className="px-4 py-2 text-center">{item.Coluna1}</td>
+                        <td className="px-4 py-2 text-center font-semibold text-blue-500">{item["DATA LIMITE DE SOLICITAÇÃO "]}</td>
                       </tr>
                     ))}
                   </tbody>
