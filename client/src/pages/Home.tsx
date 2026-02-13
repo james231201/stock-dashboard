@@ -336,9 +336,14 @@ export default function Home() {
               </label>
             </div>
           </div>
-          <p className="text-muted-foreground">
-            Análise dinâmica de inventário e indicadores de reposição
-          </p>
+          <div>
+            <p className="text-muted-foreground">
+              Análise dinâmica de inventário e indicadores de reposição
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Última atualização: {data ? new Date().toLocaleString('pt-BR') : 'Carregando...'}
+            </p>
+          </div>
         </div>
       </header>
       <main className="max-w-7xl mx-auto px-4 py-8">
