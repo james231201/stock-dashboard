@@ -156,15 +156,24 @@ export default function Home() {
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      console.log("📊 Dados lidos do Excel:", { total_linhas: jsonData.length, primeira_linha: jsonData[0] });
 
       // Processar dados do Excel
       const processedData: DataItem[] = jsonData.map((item: any) => {
-        const duracao = Number(item["DURAÇÃO EM DIAS"] || item["Duração"] || 0);
+        const saldo = Number(item["SALDO EM ESTOQUE"] || item["Estoque"] || 0);
+        const consumo = Number(item["CONSUMO MEDIO MENSAL"] || item["Consumo"] || 0);
+        
+        // Recalcular duração em dias: (saldo / (consumo / 30))
+        let duracao = 0;
+        if (consumo > 0) {
+          duracao = Math.round((saldo / (consumo / 30)));
+        }
+        
         return {
           CODIGO: Number(item["CODIGO"] || item["Código"] || 0),
           "DESCRIÇÃO DO ITEM": String(item["DESCRIÇÃO DO ITEM"] || item["Descrição"] || ""),
-          "SALDO EM ESTOQUE": Number(item["SALDO EM ESTOQUE"] || item["Estoque"] || 0),
-          "CONSUMO MEDIO MENSAL": Number(item["CONSUMO MEDIO MENSAL"] || item["Consumo"] || 0),
+          "SALDO EM ESTOQUE": saldo,
+          "CONSUMO MEDIO MENSAL": consumo,
           "LEAD TIME": Number(item["LEAD TIME"] || item["Lead Time"] || 0),
           "DURAÇÃO EM DIAS": duracao,
           "DATA LIMITE DE SOLICITAÇÃO ": converterDataExcel(
@@ -209,7 +218,8 @@ export default function Home() {
 
       // Salvar no servidor (data.json)
       try {
-        console.log("📤 Enviando dados para o servidor...", { total_itens: newData.total_itens });
+        console.log("📤 Enviando dados para o servidor...", { total_itens: newData.total_itens, data_preview_length: newData.data_preview.length });
+        console.log("📋 Dados completos:", newData);
         const response = await fetch("/api/save-dashboard", {
           method: "POST",
           headers: {
