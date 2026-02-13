@@ -54,7 +54,8 @@ export default function Home() {
 
   // Usar tRPC para carregar dados
   const { data: dashboardData, refetch: refetchData } = trpc.dashboard.getData.useQuery(undefined, {
-    refetchInterval: 5000, // Sincronizar a cada 5 segundos
+    refetchInterval: false, // Desabilitar refetch automático para evitar sobrescrever uploads
+    staleTime: 1000 * 60 * 5, // Considerar dados frescos por 5 minutos
   });
 
   // Usar tRPC para salvar dados
