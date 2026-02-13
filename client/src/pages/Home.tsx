@@ -48,31 +48,43 @@ export default function Home() {
     loadDefaultData();
   }, []);
 
-  const loadDefaultData = async () => {
+  const loadDefaultData = () => {
     try {
-      // Carregar dados do servidor via API (não do arquivo estático)
-      const response = await fetch('/api/trpc/dashboard.getData?batch=true', {
+      // Carregar dados do arquivo data.json com cache-busting
+      const timestamp = new Date().getTime();
+      fetch(`/data.json?t=${timestamp}`, {
         credentials: 'include',
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        // tRPC retorna um array com resultado
-        const data = result[0]?.result?.data || result[0]?.data;
-        if (data) {
-          setData(data);
-          setFilteredData(data.data_preview || []);
-        }
-      }
-      setIsLoading(false);
+      })
+        .then((res) => res.json())
+        .then((json: DashboardData) => {
+          console.log('✅ Dados carregados:', json.total_itens, 'itens');
+          setData(json);
+          setFilteredData(json.data_preview || []);
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error('Erro ao carregar dados:', error);
+          setIsLoading(false);
+          toast.error('Erro ao carregar dados iniciais');
+        });
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('Erro:', error);
       setIsLoading(false);
-      toast.error('Erro ao carregar dados iniciais');
     }
   };
 
   // Recarregar dados a cada 5 segundos para sincronizar com outros usuários
+  useEffect(() => {
+    loadDefaultData();
+    
+    const interval = setInterval(() => {
+      loadDefaultData();
+    }, 5000); // Sincronizar a cada 5 segundos
+
+    return () => clearInterval(interval);
+  }, []);
+
+    // Recarregar dados a cada 5 segundos para sincronizar com outros usuários
   useEffect(() => {
     loadDefaultData();
     
