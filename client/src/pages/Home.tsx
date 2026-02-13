@@ -342,11 +342,12 @@ export default function Home() {
       </header>
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="p-6 bg-card text-card-foreground">
+          <Card className="p-6 bg-card text-card-foreground cursor-pointer hover:bg-muted transition-colors" onClick={() => handleCategoryFilter("Todos")}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">Total de Itens</p>
-                <p className="text-3xl font-bold text-blue-500">{data.total_itens}</p>
+                <p className="text-3xl font-bold text-blue-500">{selectedCategory === "Todos" ? data.total_itens : filteredData.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">Clique para ver todos</p>
               </div>
               <Package className="w-8 h-8 text-blue-500" />
             </div>
@@ -530,7 +531,12 @@ export default function Home() {
                         <td className="px-4 py-2 text-right">{item["LEAD TIME"]}</td>
                         <td className="px-4 py-2 text-right font-bold">{item["DURAÇÃO EM DIAS"]}</td>
                         <td className="px-4 py-2 text-center">{item.Coluna1}</td>
-                        <td className="px-4 py-2 text-center font-semibold text-blue-500">{item["DATA LIMITE DE SOLICITAÇÃO "]}</td>
+                        <td className={`px-4 py-2 text-center font-semibold ${
+                          item.Coluna1.includes("🔴") ? "text-red-500" :
+                          item.Coluna1.includes("🟡") ? "text-yellow-500" :
+                          item.Coluna1.includes("🟢") ? "text-green-500" :
+                          "text-blue-500"
+                        }`}>{item["DATA LIMITE DE SOLICITAÇÃO "]}</td>
                       </tr>
                     ))}
                   </tbody>
