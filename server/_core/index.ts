@@ -1,4 +1,4 @@
-import "dotenv/config";
+import path from "path";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
@@ -44,7 +44,7 @@ async function startServer() {
     })
   );
 
-  // Rota simples para salvar dados do dashboard
+  // Rota para salvar dados do dashboard em ambos os locais
   app.post("/api/save-dashboard", async (req: express.Request, res: express.Response) => {
     try {
       const { json } = req.body;
@@ -53,10 +53,23 @@ async function startServer() {
       }
 
       const fs = await import("fs").then(m => m.promises);
-      const path = await import("path");
-      const dataPath = path.join(process.cwd(), "client", "public", "data.json");
       
-      await fs.writeFile(dataPath, JSON.stringify(json, null, 2));
+      // Salvar em ambos os locais
+      const clientPath = path.join(process.cwd(), "client", "public", "data.json");
+      const distPath = path.join(process.cwd(), "dist", "public", "data.json");
+      
+      const jsonString = JSON.stringify(json, null, 2);
+      
+      // Salvar em client/public
+      await fs.writeFile(clientPath, jsonString);
+      
+      // Salvar em dist/public se existir
+      try {
+        await fs.writeFile(distPath, jsonString);
+      } catch (e) {
+        console.warn("[Dashboard] Aviso: nao foi possivel salvar em dist/public");
+      }
+      
       console.log("[Dashboard] Dados salvos com sucesso!", { total_itens: json.total_itens });
       
       res.json({ success: true, message: "Dados salvos com sucesso" });

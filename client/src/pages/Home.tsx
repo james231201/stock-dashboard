@@ -379,22 +379,24 @@ export default function Home() {
           </Card>
 
           <Card className="p-6 bg-card text-card-foreground cursor-pointer hover:bg-muted transition-colors" onClick={() => {
-            const minItem = data.data_preview.reduce((min, item) =>
-              item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
-            );
-            handleSearch(minItem["DESCRIÇÃO DO ITEM"]);
+            if (data.data_preview.length > 0) {
+              const minItem = data.data_preview.reduce((min, item) =>
+                item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
+              );
+              handleSearch(minItem["DESCRIÇÃO DO ITEM"]);
+            }
           }}>
             <div className="flex flex-col items-center justify-center text-center">
               <p className="text-muted-foreground text-sm">Menor Estoque</p>
               <p className="text-lg font-bold text-orange-500">
-                {data.data_preview.reduce((min, item) =>
+                {data.data_preview.length > 0 ? data.data_preview.reduce((min, item) =>
                   item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
-                )["DESCRIÇÃO DO ITEM"]}
+                )["DESCRIÇÃO DO ITEM"] : "N/A"}
               </p>
               <p className="text-xs text-muted-foreground">
-                {data.data_preview.reduce((min, item) =>
+                {data.data_preview.length > 0 ? data.data_preview.reduce((min, item) =>
                   item["SALDO EM ESTOQUE"] < min["SALDO EM ESTOQUE"] ? item : min
-                )["SALDO EM ESTOQUE"]}{" "}
+                )["SALDO EM ESTOQUE"] : "0"}{" "}
                 un
               </p>
               <TrendingDown className="w-8 h-8 text-orange-500 mt-2" />
@@ -402,22 +404,24 @@ export default function Home() {
           </Card>
 
           <Card className="p-6 bg-card text-card-foreground cursor-pointer hover:bg-muted transition-colors" onClick={() => {
-            const maxItem = data.data_preview.reduce((max, item) =>
-              item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
-            );
-            handleSearch(maxItem["DESCRIÇÃO DO ITEM"]);
+            if (data.data_preview.length > 0) {
+              const maxItem = data.data_preview.reduce((max, item) =>
+                item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
+              );
+              handleSearch(maxItem["DESCRIÇÃO DO ITEM"]);
+            }
           }}>
             <div className="flex flex-col items-center justify-center text-center">
               <p className="text-muted-foreground text-sm">Maior Estoque</p>
               <p className="text-lg font-bold text-green-500">
-                {data.data_preview.reduce((max, item) =>
+                {data.data_preview.length > 0 ? data.data_preview.reduce((max, item) =>
                   item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
-                )["DESCRIÇÃO DO ITEM"]}
+                )["DESCRIÇÃO DO ITEM"] : "N/A"}
               </p>
               <p className="text-xs text-muted-foreground">
-                {data.data_preview.reduce((max, item) =>
+                {data.data_preview.length > 0 ? data.data_preview.reduce((max, item) =>
                   item["SALDO EM ESTOQUE"] > max["SALDO EM ESTOQUE"] ? item : max
-                )["SALDO EM ESTOQUE"]}{" "}
+                )["SALDO EM ESTOQUE"] : "0"}{" "}
                 un
               </p>
               <Package className="w-8 h-8 text-green-500 mt-2" />
