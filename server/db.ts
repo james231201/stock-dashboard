@@ -105,7 +105,8 @@ export async function saveDashboardData(input: any) {
       itens_criticos: dataToSave.itens_criticos || [],
       itens_atencao: dataToSave.itens_atencao || [],
       media_duracao: dataToSave.media_duracao || 0,
-      data_preview: dataToSave.data_preview || []
+      data_preview: dataToSave.data_preview || [],
+      last_update_time: dataToSave.last_update_time || new Date().toISOString()
     };
     
     // Salvar em ambos os lugares: client/public e dist/public

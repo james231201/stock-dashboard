@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -37,6 +39,7 @@ interface DashboardData {
   itens_atencao: string[];
   media_duracao: number;
   data_preview: DataItem[];
+  last_update_time?: string; // ISO timestamp
 }
 
 type SortKey = keyof DataItem | null;
@@ -52,6 +55,10 @@ export default function Home() {
   const [sortKey, setSortKey] = useState<SortKey>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const PASSWORD = "231201";
 
   // Usar tRPC para carregar dados
   const { data: dashboardData, refetch: refetchData } = trpc.dashboard.getData.useQuery(undefined, {
@@ -78,7 +85,10 @@ export default function Home() {
       setData(dashboardData);
       setFilteredData(dashboardData.data_preview || []);
       setLoading(false);
-      setLastUpdateTime(new Date());
+      // Carregar timestamp do servidor se disponível
+      if (dashboardData.last_update_time) {
+        setLastUpdateTime(new Date(dashboardData.last_update_time));
+      }
     }
   }, [dashboardData]);
 
@@ -175,6 +185,7 @@ export default function Home() {
         itens_atencao: itensAtencao,
         media_duracao: Math.round(mediaDuracao * 10) / 10,
         data_preview: processedData,
+        last_update_time: new Date().toISOString(), // Adicionar timestamp
       };
 
       console.log("📤 Enviando dados para o servidor via tRPC...", { total_itens: newData.total_itens });
@@ -184,7 +195,7 @@ export default function Home() {
       
       setSelectedCategory("Todos");
       setSearchTerm("");
-      setLastUpdateTime(new Date()); // Atualizar data de última atualização
+      // O timestamp será carregado do servidor via useEffect
       toast.success(`✅ Dados carregados e salvos! ${totalItens} itens processados.`);
       toast.info("📡 Sincronizando com outros usuários...");
     } catch (error) {
@@ -202,7 +213,23 @@ export default function Home() {
         toast.error("Por favor, selecione um arquivo Excel (.xlsx ou .xls)");
         return;
       }
-      processarExcel(file);
+      // Abrir diálogo de senha
+      setPendingFile(file);
+      setPasswordDialogOpen(true);
+      setPasswordInput("");
+    }
+  };
+
+  const handlePasswordSubmit = () => {
+    if (passwordInput === PASSWORD) {
+      setPasswordDialogOpen(false);
+      if (pendingFile) {
+        processarExcel(pendingFile);
+        setPendingFile(null);
+      }
+    } else {
+      toast.error("Senha incorreta!");
+      setPasswordInput("");
     }
   };
 
@@ -306,7 +333,47 @@ export default function Home() {
     return <div className="flex items-center justify-center h-screen">Nenhum dado disponível</div>;
   }
 
+  // Diálogo de senha
+  const PasswordDialog = () => (
+    <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Protegido por Senha</DialogTitle>
+          <DialogDescription>
+            Digite a senha para carregar o arquivo Excel
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input
+            type="password"
+            placeholder="Digite a senha"
+            value={passwordInput}
+            onChange={(e) => setPasswordInput(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handlePasswordSubmit()}
+          />
+          <div className="flex gap-2">
+            <Button
+              onClick={handlePasswordSubmit}
+              className="flex-1"
+            >
+              Confirmar
+            </Button>
+            <Button
+              onClick={() => setPasswordDialogOpen(false)}
+              variant="outline"
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
+    <>
+      <PasswordDialog />
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
@@ -567,5 +634,6 @@ export default function Home() {
         </Card>
       </main>
     </div>
+    </>
   );
 }
