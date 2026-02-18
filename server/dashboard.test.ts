@@ -1,10 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { getDashboardData, saveDashboardData } from './db';
-import * as fs from 'fs';
-import * as path from 'path';
 
 describe('Dashboard Data Operations', () => {
-  const testDataPath = path.join(__dirname, '../client/public/data.json');
   const testData = {
     total_itens: 25,
     estoque_total: 10000,
@@ -21,23 +18,14 @@ describe('Dashboard Data Operations', () => {
     last_update_time: new Date().toISOString(),
   };
 
-  beforeEach(() => {
-    // Limpar dados de teste antes de cada teste
-    if (fs.existsSync(testDataPath)) {
-      fs.unlinkSync(testDataPath);
-    }
-  });
-
   it('should save dashboard data with timestamp', async () => {
     await saveDashboardData(testData);
     
-    // Verificar se o arquivo foi criado
-    expect(fs.existsSync(testDataPath)).toBe(true);
-    
-    // Verificar conteúdo do arquivo
-    const savedData = JSON.parse(fs.readFileSync(testDataPath, 'utf-8'));
-    expect(savedData.total_itens).toBe(25);
-    expect(savedData.last_update_time).toBeDefined();
+    // Carregar dados para verificar se foram salvos
+    const loadedData = await getDashboardData();
+    expect(loadedData).toBeDefined();
+    expect(loadedData?.total_itens).toBe(25);
+    expect(loadedData?.last_update_time).toBeDefined();
   });
 
   it('should load dashboard data with timestamp', async () => {
@@ -97,6 +85,45 @@ describe('Dashboard Data Operations', () => {
     expect(loaded2?.total_itens).toBe(26);
     expect(loaded2?.last_update_time).toBe(timestamp2);
     expect(loaded2?.last_update_time).not.toBe(timestamp1);
+  });
+
+  it('should persist data across multiple loads', async () => {
+    const data1 = {
+      ...testData,
+      total_itens: 25,
+    };
+    
+    await saveDashboardData(data1);
+    const loaded1 = await getDashboardData();
+    expect(loaded1?.total_itens).toBe(25);
+    
+    // Carregar novamente sem salvar
+    const loaded2 = await getDashboardData();
+    expect(loaded2?.total_itens).toBe(25);
+    
+    // Os dados devem ser os mesmos
+    expect(loaded1?.total_itens).toBe(loaded2?.total_itens);
+  });
+
+  it('should update data correctly when new data is saved', async () => {
+    const data1 = {
+      ...testData,
+      total_itens: 25,
+    };
+    
+    await saveDashboardData(data1);
+    let loaded = await getDashboardData();
+    expect(loaded?.total_itens).toBe(25);
+    
+    // Salvar novos dados
+    const data2 = {
+      ...testData,
+      total_itens: 26,
+    };
+    
+    await saveDashboardData(data2);
+    loaded = await getDashboardData();
+    expect(loaded?.total_itens).toBe(26);
   });
 });
 

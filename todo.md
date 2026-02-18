@@ -28,3 +28,7 @@
 
 ## Bugs Corrigidos
 - [x] "Comprar Primeiro" agora mostra itens com estoque zerado como prioridade máxima
+
+
+## Bugs Corrigidos
+- [x] CRÍTICO: Dados agora são persistidos no banco de dados MySQL em vez de arquivos JSON

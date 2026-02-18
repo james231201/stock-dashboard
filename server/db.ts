@@ -91,9 +91,6 @@ export async function getUserByOpenId(openId: string) {
 
 export async function saveDashboardData(input: any) {
   try {
-    const fs = await import('fs').then(m => m.promises);
-    const path = await import('path');
-    // Extrair o campo json do input
     const dataToSave = input && input.json ? input.json : (input && typeof input === 'object' ? input : {});
     
     // Garantir que os dados tem a estrutura correta
@@ -109,51 +106,39 @@ export async function saveDashboardData(input: any) {
       last_update_time: dataToSave.last_update_time || new Date().toISOString()
     };
     
-    // Salvar em ambos os lugares: client/public e dist/public
-    const clientPath = path.join(process.cwd(), 'client', 'public', 'data.json');
-    const distPath = path.join(process.cwd(), 'dist', 'public', 'data.json');
-    
-    // Salvar em client/public (sempre)
-    await fs.writeFile(clientPath, JSON.stringify(finalData, null, 2));
-    console.log('[Dashboard] Dados salvos em client/public!', { total_itens: finalData.total_itens });
-    
-    // Tentar salvar em dist/public tambem (se existir)
-    try {
-      await fs.writeFile(distPath, JSON.stringify(finalData, null, 2));
-      console.log('[Dashboard] Dados salvos em dist/public!', { total_itens: finalData.total_itens });
-    } catch (distError) {
-      console.log('[Dashboard] dist/public nao disponivel (normal em desenvolvimento)');
+    const db = await getDb();
+    if (db) {
+      // Salvar no banco de dados - deletar dados antigos e inserir novos
+      await db.delete(dashboardData);
+      await db.insert(dashboardData).values({
+        data: JSON.stringify(finalData)
+      });
+      console.log('[Dashboard] Dados salvos no banco de dados!', { total_itens: finalData.total_itens });
+    } else {
+      console.warn('[Dashboard] Banco de dados nao disponivel, dados nao foram salvos');
     }
   } catch (error) {
-    console.warn('[Dashboard] Aviso ao salvar data.json:', error);
+    console.error('[Dashboard] Erro ao salvar dados:', error);
   }
 }
 
 export async function getDashboardData() {
   try {
-    const fs = await import('fs').then(m => m.promises);
-    const path = await import('path');
-    // Tentar ler de dist/public primeiro, depois de client/public
-    const distPath = path.join(process.cwd(), 'dist', 'public', 'data.json');
-    const clientPath = path.join(process.cwd(), 'client', 'public', 'data.json');
-    
-    // Tentar dist primeiro
-    try {
-      const fileContent = await fs.readFile(distPath, 'utf-8');
-      const data = JSON.parse(fileContent);
-      console.log('[Dashboard] Dados lidos de dist/public:', { total_itens: data.total_itens });
-      return data;
-    } catch (distError) {
-      // Se dist falhar, tentar client
-      try {
-        const fileContent = await fs.readFile(clientPath, 'utf-8');
-        const data = JSON.parse(fileContent);
-        console.log('[Dashboard] Dados lidos de client/public:', { total_itens: data.total_itens });
+    const db = await getDb();
+    if (db) {
+      // Ler do banco de dados
+      const result = await db.select().from(dashboardData).limit(1);
+      if (result.length > 0) {
+        const data = JSON.parse(result[0].data);
+        console.log('[Dashboard] Dados lidos do banco de dados:', { total_itens: data.total_itens });
         return data;
-      } catch (clientError) {
-        console.warn('[Dashboard] Nenhum arquivo data.json encontrado');
+      } else {
+        console.warn('[Dashboard] Nenhum dado encontrado no banco de dados');
         return null;
       }
+    } else {
+      console.warn('[Dashboard] Banco de dados nao disponivel');
+      return null;
     }
   } catch (error) {
     console.error('[Dashboard] Erro ao ler dados:', error);
