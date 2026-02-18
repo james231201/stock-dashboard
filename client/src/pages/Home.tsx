@@ -164,13 +164,29 @@ export default function Home() {
         "🟢 OK": processedData.filter((item) => item.Coluna1.includes("🟢")).length,
       };
 
-      const itensCriticos = processedData
-        .filter((item) => item.Coluna1.includes("🔴"))
+      // Priorizar itens com estoque zerado
+      const itensZerados = processedData
+        .filter((item) => item["SALDO EM ESTOQUE"] === 0)
+        .sort((a, b) => {
+          if (a["LEAD TIME"] !== b["LEAD TIME"]) {
+            return b["LEAD TIME"] - a["LEAD TIME"];
+          }
+          return b["CONSUMO MEDIO MENSAL"] - a["CONSUMO MEDIO MENSAL"];
+        })
         .map((item) => item["DESCRIÇÃO DO ITEM"]);
 
-      const itensAtencao = processedData
-        .filter((item) => item.Coluna1.includes("🟡"))
+      const itensCriticos = processedData
+        .filter((item) => item.Coluna1.includes("🔴") && item["SALDO EM ESTOQUE"] > 0)
         .map((item) => item["DESCRIÇÃO DO ITEM"]);
+
+      let itensAtencao = processedData
+        .filter((item) => item.Coluna1.includes("🟡") && item["SALDO EM ESTOQUE"] > 0)
+        .map((item) => item["DESCRIÇÃO DO ITEM"]);
+      
+      // Se houver itens zerados, priorizar eles
+      if (itensZerados.length > 0) {
+        itensAtencao = [...itensZerados, ...itensAtencao];
+      }
 
       const newData: DashboardData = {
         total_itens: totalItens,

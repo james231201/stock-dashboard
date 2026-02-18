@@ -24,3 +24,7 @@
 - [x] Removida proteção por senha - dashboard funciona perfeitamente novamente
 - [x] Todos os 8 testes vitest passam com sucesso
 - [x] Fazer checkpoint final
+
+
+## Bugs Corrigidos
+- [x] "Comprar Primeiro" agora mostra itens com estoque zerado como prioridade máxima
