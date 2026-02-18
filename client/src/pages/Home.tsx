@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -54,6 +55,8 @@ export default function Home() {
   const [sortKey, setSortKey] = useState<SortKey>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const PASSWORD = "231201";
 
@@ -210,21 +213,23 @@ export default function Home() {
         toast.error("Por favor, selecione um arquivo Excel (.xlsx ou .xls)");
         return;
       }
-      // Pedir senha
+      // Abrir diálogo de senha
       setPendingFile(file);
-      handlePasswordSubmit();
+      setPasswordDialogOpen(true);
+      setPasswordInput("");
     }
   };
 
-  const handlePasswordSubmit = async () => {
-    const password = prompt("Digite a senha para carregar o arquivo Excel:");
-    if (password === PASSWORD) {
+  const handlePasswordSubmit = () => {
+    if (passwordInput === PASSWORD) {
+      setPasswordDialogOpen(false);
       if (pendingFile) {
-        await processarExcel(pendingFile);
+        processarExcel(pendingFile);
         setPendingFile(null);
       }
-    } else if (password !== null) {
+    } else {
       toast.error("Senha incorreta!");
+      setPasswordInput("");
     }
   };
 
@@ -328,11 +333,48 @@ export default function Home() {
     return <div className="flex items-center justify-center h-screen">Nenhum dado disponível</div>;
   }
 
-  // Senha protegida com prompt simples
+  // Diálogo de senha
+  const PasswordDialog = () => (
+    <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Protegido por Senha</DialogTitle>
+          <DialogDescription>
+            Digite a senha para carregar o arquivo Excel
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input
+            type="password"
+            placeholder="Digite a senha"
+            value={passwordInput}
+            onChange={(e) => setPasswordInput(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handlePasswordSubmit()}
+          />
+          <div className="flex gap-2">
+            <Button
+              onClick={handlePasswordSubmit}
+              className="flex-1"
+            >
+              Confirmar
+            </Button>
+            <Button
+              onClick={() => setPasswordDialogOpen(false)}
+              variant="outline"
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <>
-      <div className="min-h-screen bg-background">
+      <PasswordDialog />
+    <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
           <div>
@@ -349,16 +391,19 @@ export default function Home() {
                 className="hidden"
                 id="excel-upload"
               />
-              <Button
-                type="button"
-                disabled={uploading}
-                className="cursor-pointer"
-                variant="outline"
-                onClick={() => document.getElementById('excel-upload')?.click()}
-              >
-                <Upload className="w-4 h-4" />
-                {uploading ? "Carregando..." : "Carregar Excel"}
-              </Button>
+              <label htmlFor="excel-upload">
+                <Button
+                  asChild
+                  disabled={uploading}
+                  className="cursor-pointer"
+                  variant="outline"
+                >
+                  <span className="flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    {uploading ? "Carregando..." : "Carregar Excel"}
+                  </span>
+                </Button>
+              </label>
             </div>
           </div>
           <div>

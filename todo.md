@@ -24,7 +24,3 @@
 - [x] Adicionados testes vitest para validar funcionalidades
 - [ ] Fazer checkpoint final
 - [ ] Publicar solução
-
-## Bugs Corrigidos
-- [x] Bug da senha: corrigido usando prompt simples em vez de diálogo complexo
-- [ ] Sincronização de dados: atualizar para todos os usuários quando Excel é carregado
