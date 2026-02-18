@@ -24,3 +24,8 @@
 - [x] Adicionados testes vitest para validar funcionalidades
 - [ ] Fazer checkpoint final
 - [ ] Publicar solução
+
+## Correções Recentes (Checkpoint bd0e2252)
+- [x] Bug da senha: corrigido usando prompt simples em vez de diálogo complexo
+- [x] Dados do Excel: corrigido removendo referências ao diálogo antigo
+- [x] Todos os 8 testes vitest passam com sucesso
