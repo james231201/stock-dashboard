@@ -19,8 +19,8 @@
 ## Últimas Atualizações
 - [x] Arquivo data.json atualizado com 25 itens do Excel
 - [x] Sincronização de dados em tempo real implementada
-- [x] Implementada proteção por senha (231201) para upload de Excel
 - [x] Corrigida lógica de timestamp para atualizar apenas no upload
 - [x] Adicionados testes vitest para validar funcionalidades
-- [ ] Fazer checkpoint final
-- [ ] Publicar solução
+- [x] Removida proteção por senha - dashboard funciona perfeitamente novamente
+- [x] Todos os 8 testes vitest passam com sucesso
+- [x] Fazer checkpoint final
