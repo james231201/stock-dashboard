@@ -127,8 +127,15 @@ export default function Home() {
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
       console.log("📊 Dados lidos do Excel:", { total_linhas: jsonData.length, primeira_linha: jsonData[0] });
 
-      // Processar dados do Excel
-      const processedData: DataItem[] = jsonData.map((item: any) => {
+      // Processar dados do Excel - remover linhas vazias
+      const validData = jsonData.filter((item: any) => {
+        // Verificar se a linha tem pelo menos um código ou descrição válida
+        const codigo = Number(item["CODIGO"] || item["Código"] || 0);
+        const descricao = String(item["DESCRIÇÃO DO ITEM"] || item["Descrição"] || "").trim();
+        return codigo > 0 || descricao.length > 0;
+      });
+      
+      const processedData: DataItem[] = validData.map((item: any) => {
         const saldo = Number(item["SALDO EM ESTOQUE"] || item["Estoque"] || 0);
         const consumo = Number(item["CONSUMO MEDIO MENSAL"] || item["Consumo"] || 0);
         

@@ -32,3 +32,7 @@
 
 ## Bugs Corrigidos
 - [x] CRÍTICO: Dados agora são persistidos no banco de dados MySQL em vez de arquivos JSON
+
+
+## Correções Recentes
+- [x] Contagem de itens corrigida: agora mostra 25 itens em vez de 26 (removidas linhas vazias)
